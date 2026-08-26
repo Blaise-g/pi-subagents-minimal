@@ -1,0 +1,22 @@
+[
+  {
+    "id": "locate-skill-merge",
+    "kind": "exploration",
+    "prompt": "Locate where DefaultResourceLoader combines explicitly supplied additionalSkillPaths with automatically discovered skill paths. Return the exact implementation location and a concise explanation of precedence in at most 180 words."
+  },
+  {
+    "id": "trace-tool-selection",
+    "kind": "exploration",
+    "prompt": "Trace how createAgentSession turns an explicit tools allowlist into the tools installed on the child Agent. Name the key functions/files in order and answer in at most 250 words."
+  },
+  {
+    "id": "establish-skill-loading",
+    "kind": "research",
+    "prompt": "Establish, from the official installed documentation and implementation, whether supplying explicit skill paths still works when normal skill discovery is disabled, and whether full SKILL.md bodies are always placed in the initial system prompt. Cite exact local file paths and line ranges for every material claim. Separate facts from any recommendation."
+  },
+  {
+    "id": "establish-session-isolation",
+    "kind": "research",
+    "prompt": "Establish, from the official installed documentation and implementation, the minimum conditions under which createAgentSession starts without inherited conversation messages. Explain the distinction between conversation isolation and project context loading. Cite exact local file paths and line ranges for every material claim; identify uncertainty rather than guessing."
+  }
+]
