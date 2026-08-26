@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prototype — Minimal background lifecycle</title>
+  <style>
+    :root { --ink:#17211d; --muted:#63706a; --paper:#f6f4ed; --panel:#fffdf8; --line:#d8d8ce; --accent:#176b55; --soft:#e4f0eb; --warn:#9b5a12; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.45 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { width:min(1120px,calc(100% - 32px)); margin:36px auto 64px; }
+    h1,h2,h3,p { margin-top:0; }
+    h1 { margin-bottom:8px; font-size:clamp(28px,4vw,44px); letter-spacing:-.035em; }
+    h2 { font-size:18px; margin-bottom:14px; }
+    .eyebrow { color:var(--accent); font-weight:750; letter-spacing:.08em; text-transform:uppercase; font-size:12px; }
+    .intro { max-width:850px; color:#3e4a44; font-size:17px; }
+    .question { border-left:4px solid var(--accent); padding:12px 16px; background:var(--soft); margin:22px 0 28px; }
+    .grid { display:grid; grid-template-columns:1.3fr .7fr; gap:18px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px; box-shadow:0 1px 2px #17211d0a; }
+    .span { grid-column:1 / -1; }
+    .tools { display:flex; gap:8px; flex-wrap:wrap; }
+    .tool { border:1px solid var(--line); border-radius:999px; padding:6px 10px; color:var(--muted); }
+    .tool.active { color:var(--accent); border-color:#70a997; background:var(--soft); font-weight:700; }
+    .fact { margin-top:12px; color:var(--muted); font-size:13px; }
+    .delegation { border-top:1px solid var(--line); padding:13px 0; display:grid; grid-template-columns:90px 1fr auto; gap:12px; align-items:start; }
+    .delegation:first-child { border-top:0; padding-top:0; }
+    .id { font-weight:750; color:var(--accent); }
+    .status { border-radius:999px; padding:3px 8px; background:#ecece5; font-size:12px; font-weight:700; white-space:nowrap; }
+    .status.terminal { background:var(--soft); color:var(--accent); }
+    .status.cancelling { background:#fff0d9; color:var(--warn); }
+    .meta { color:var(--muted); font-size:13px; margin-top:2px; }
+    .empty { color:var(--muted); font-style:italic; }
+    .log { list-style:none; padding:0; margin:0; max-height:280px; overflow:auto; }
+    .log li { padding:8px 0; border-top:1px solid var(--line); }
+    .log li:first-child { border-top:0; padding-top:0; }
+    .log strong { color:var(--accent); }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; }
+    button { appearance:none; border:1px solid var(--accent); background:var(--accent); color:white; border-radius:8px; padding:9px 12px; font:inherit; font-weight:700; cursor:pointer; }
+    button.secondary { color:var(--accent); background:transparent; }
+    button:disabled { opacity:.35; cursor:not-allowed; }
+    .walkthroughs { margin-top:18px; }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--line); }
+    .tab { border:0; border-radius:8px 8px 0 0; color:var(--muted); background:transparent; }
+    .tab.active { color:var(--accent); background:var(--soft); }
+    .walk { padding-top:16px; }
+    .steps { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .step { background:transparent; color:var(--accent); }
+    .step.current { background:var(--accent); color:white; }
+    .step.done { border-color:#9aacA5; color:#77837d; text-decoration:line-through; }
+    .verdict { background:#f1eee3; }
+    .verdict ul { margin-bottom:0; }
+    code { background:#ecece5; border-radius:4px; padding:1px 4px; }
+    @media (max-width:760px) { .grid { grid-template-columns:1fr; } .span { grid-column:auto; } .delegation { grid-template-columns:72px 1fr; } .status { grid-column:2; width:max-content; } }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Throwaway logic prototype</div>
+  <h1>Minimal background lifecycle</h1>
+  <p class="intro">Drive a proposed parent-facing contract: one always-available launch tool and one control tool that exists only while a Delegation is live or has an unread terminal result.</p>
+  <div class="question"><strong>Question:</strong> Does a dynamically exposed <code>delegation_control</code> tool—combining truthful inspection/result access with whole-Delegation cancellation—provide enough control without paying for permanent status, result, wait, and cancel tools?</div>
+
+  <div class="grid">
+    <section class="panel span">
+      <h2>Current parent surface</h2>
+      <div id="tools" class="tools"></div>
+      <div class="fact">Only observed states are named: <strong>queued</strong> (registered, prompt not accepted), <strong>running</strong> (Pi accepted the child prompt), <strong>cancelling</strong> (abort requested, settlement pending), and <strong>terminal</strong>. There is no percentage, ETA, “stalled,” or inferred progress.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Delegations</h2>
+      <div id="delegations"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Parent-visible events</h2>
+      <ul id="events" class="log"></ul>
+    </section>
+
+    <section class="panel span">
+      <h2>Free play</h2>
+      <div class="actions">
+        <button data-action="launch-single">Launch one Investigation</button>
+        <button data-action="launch-batch">Launch Flat batch</button>
+        <button class="secondary" data-action="accept">Accept next prompt</button>
+        <button class="secondary" data-action="inspect">Inspect oldest</button>
+        <button class="secondary" data-action="succeed">Complete oldest live</button>
+        <button class="secondary" data-action="partial">Complete batch with mixed outcomes</button>
+        <button class="secondary" data-action="cancel">Cancel oldest live</button>
+        <button class="secondary" data-action="settle-cancel">Settle cancellation</button>
+        <button class="secondary" data-action="reset">Reset</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel walkthroughs">
+    <h2>Guided walkthroughs</h2>
+    <div id="tabs" class="tabs"></div>
+    <div id="walk" class="walk"></div>
+  </section>
+
+  <section class="panel verdict" style="margin-top:18px">
+    <h2>Contract this prototype is testing</h2>
+    <ul>
+      <li><code>delegate</code> launches exactly one Subagent or one Flat batch and immediately returns one Delegation id.</li>
+      <li><code>delegation_control</code> is activated after launch. <code>inspect</code> returns a truthful live phase or the bounded terminal result; <code>cancel</code> requests cancellation of the whole Delegation.</li>
+      <li>A small completion message announces only that a Delegation became terminal. The potentially larger result enters model context only when inspected.</li>
+      <li>After every live Delegation is terminal and every terminal result has been inspected, the control tool is removed from the active tool set.</li>
+      <li>The registry is session-memory only. Parent shutdown cancels and settles live work; v1 has no resume, persistence, steering, per-child controls, or polling-only status tool.</li>
+    </ul>
+  </section>
+</main>
+<script>
+// Portable prototype module: no DOM access.
+const Lifecycle = (() => {
+  const initial = () => ({ nextId: 1, delegations: [], events: [], lastChange: "Prototype reset." });
+  const live = d => d.phase !== "terminal";
+  const controlActive = s => s.delegations.some(d => live(d) || !d.resultRead);
+  const record = (s, kind, text) => ({ ...s, events: [...s.events, { kind, text }], lastChange: text });
+  const update = (s, id, patch) => ({ ...s, delegations: s.delegations.map(d => d.id === id ? { ...d, ...patch } : d) });
+  const oldest = (s, predicate) => s.delegations.find(predicate);
+
+  function reduce(state, action) {
+    let s = state;
+    if (action.type === "RESET") return initial();
+    if (action.type === "LAUNCH") {
+      const id = `D-${String(s.nextId).padStart(2, "0")}`;
+      const d = { id, shape: action.shape, tasks: action.shape === "batch" ? 3 : 1, phase: "queued", outcome: null, resultRead: false };
+      s = { ...s, nextId: s.nextId + 1, delegations: [...s.delegations, d] };
+      return record(s, "tool", `delegate returned ${id}; delegation_control is now active.`);
+    }
+    if (action.type === "ACCEPT") {
+      const d = oldest(s, d => d.phase === "queued");
+      if (!d) return record(s, "noop", "No queued Delegation has a prompt to accept.");
+      s = update(s, d.id, { phase: "running" });
+      return record(s, "runtime", `${d.id} is running: Pi accepted its child prompt.`);
+    }
+    if (action.type === "INSPECT") {
+      const d = oldest(s, d => live(d) || !d.resultRead);
+      if (!d) return record(s, "noop", "No live or unread Delegation exists; control is inactive.");
+      if (live(d)) return record(s, "tool", `inspect(${d.id}) returned ${d.phase}; no progress was inferred.`);
+      s = update(s, d.id, { resultRead: true });
+      return record(s, "tool", `inspect(${d.id}) returned its bounded ${d.outcome} result${controlActive(s) ? "." : "; control is now inactive."}`);
+    }
+    if (action.type === "SUCCEED") {
+      const d = oldest(s, d => d.phase === "running");
+      if (!d) return record(s, "noop", "No running Delegation can complete.");
+      s = update(s, d.id, { phase: "terminal", outcome: "succeeded" });
+      return record(s, "notification", `${d.id} became terminal (succeeded). Result body was not injected.`);
+    }
+    if (action.type === "PARTIAL") {
+      const d = oldest(s, d => d.phase === "running" && d.shape === "batch");
+      if (!d) return record(s, "noop", "No running Flat batch can complete with mixed outcomes.");
+      s = update(s, d.id, { phase: "terminal", outcome: "mixed" });
+      return record(s, "notification", `${d.id} became terminal (mixed outcomes, input ordered). Result body was not injected.`);
+    }
+    if (action.type === "CANCEL") {
+      const d = oldest(s, d => live(d));
+      if (!d) return record(s, "noop", "No live Delegation can be cancelled.");
+      if (d.phase === "queued") {
+        s = update(s, d.id, { phase: "terminal", outcome: "cancelled" });
+        return record(s, "notification", `${d.id} was removed before prompt acceptance and became terminal (cancelled).`);
+      }
+      s = update(s, d.id, { phase: "cancelling" });
+      return record(s, "tool", `cancel(${d.id}) requested abort; status is cancelling until Pi settles.`);
+    }
+    if (action.type === "SETTLE_CANCEL") {
+      const d = oldest(s, d => d.phase === "cancelling");
+      if (!d) return record(s, "noop", "No cancellation is waiting to settle.");
+      s = update(s, d.id, { phase: "terminal", outcome: "cancelled" });
+      return record(s, "notification", `${d.id} settled and became terminal (cancelled).`);
+    }
+    return s;
+  }
+  return { initial, reduce, controlActive };
+})();
+
+const actions = {
+  "launch-single": { type:"LAUNCH", shape:"single" }, "launch-batch": { type:"LAUNCH", shape:"batch" },
+  accept:{ type:"ACCEPT" }, inspect:{ type:"INSPECT" }, succeed:{ type:"SUCCEED" }, partial:{ type:"PARTIAL" },
+  cancel:{ type:"CANCEL" }, "settle-cancel":{ type:"SETTLE_CANCEL" }, reset:{ type:"RESET" }
+};
+const scenarios = [
+  { name:"Research result on demand", note:"Watch the control tool appear at launch, report only observed phases, and disappear only after the result is read.", steps:["launch-single","inspect","accept","succeed","inspect"] },
+  { name:"Flat batch, partial outcome", note:"A Flat batch has one parent handle. Child outcomes stay ordered inside one terminal result; there is no per-child management surface.", steps:["launch-batch","accept","partial","inspect"] },
+  { name:"Cancellation is not completion", note:"For running work, requesting abort moves to cancelling. Only settlement creates a terminal result and notification.", steps:["launch-single","accept","cancel","inspect","settle-cancel","inspect"] },
+  { name:"Cancel before start", note:"Queued is a real registry fact. Cancellation before prompt acceptance can terminate immediately without inventing child progress.", steps:["launch-batch","cancel","inspect"] }
+];
+let state = Lifecycle.initial();
+let activeScenario = 0;
+let scenarioStep = 0;
+
+function dispatch(actionName) {
+  state = Lifecycle.reduce(state, actions[actionName]);
+  render();
+}
+function render() {
+  const control = Lifecycle.controlActive(state);
+  document.querySelector("#tools").innerHTML = `<span class="tool active">delegate · always active</span><span class="tool ${control ? "active" : ""}">delegation_control · ${control ? "active now" : "inactive"}</span>`;
+  document.querySelector("#delegations").innerHTML = state.delegations.length ? state.delegations.map(d => `
+    <div class="delegation"><div class="id">${d.id}</div><div><strong>${d.shape === "batch" ? `Flat batch · ${d.tasks} tasks` : "One Investigation"}</strong><div class="meta">${d.phase === "terminal" ? `${d.outcome} · result ${d.resultRead ? "read" : "unread"}` : "result unavailable until terminal"}</div></div><span class="status ${d.phase}">${d.phase}</span></div>`).join("") : `<div class="empty">No Delegations launched.</div>`;
+  document.querySelector("#events").innerHTML = state.events.length ? [...state.events].reverse().map(e => `<li><strong>${e.kind}</strong> — ${e.text}</li>`).join("") : `<li class="empty">Actions and notifications appear here.</li>`;
+  document.querySelectorAll("[data-action]").forEach(b => {
+    if (b.dataset.action === "inspect" || b.dataset.action === "cancel") b.disabled = !control;
+  });
+  renderWalk();
+}
+function renderTabs() {
+  document.querySelector("#tabs").innerHTML = scenarios.map((s,i) => `<button class="tab ${i===activeScenario?"active":""}" data-tab="${i}">${s.name}</button>`).join("");
+  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { activeScenario=Number(b.dataset.tab); scenarioStep=0; state=Lifecycle.initial(); renderTabs(); render(); });
+}
+function renderWalk() {
+  const s = scenarios[activeScenario];
+  document.querySelector("#walk").innerHTML = `<p>${s.note}</p><div class="steps"><button class="secondary" id="restart">Restart walkthrough</button>${s.steps.map((a,i)=>`<button class="step ${i<scenarioStep?"done":i===scenarioStep?"current":""}" data-step="${i}" ${i>scenarioStep?"disabled":""}>${i+1}. ${document.querySelector(`[data-action="${a}"]`)?.textContent || a}</button>`).join("")}</div>`;
+  document.querySelector("#restart").onclick = () => { scenarioStep=0; state=Lifecycle.initial(); render(); };
+  document.querySelectorAll("[data-step]").forEach(b => b.onclick = () => { const i=Number(b.dataset.step); if(i!==scenarioStep) return; dispatch(s.steps[i]); scenarioStep++; render(); });
+}
+document.querySelectorAll("[data-action]").forEach(b => b.onclick = () => dispatch(b.dataset.action));
+renderTabs(); render();
+</script>
+</body>
+</html>
