@@ -21,8 +21,16 @@ Multiple independent Subagents started by one Delegation, with no ordering or da
 _Avoid_: Graph, chain, workflow
 
 **Agent definition**:
-Durable role instructions that may live in a skill, a child system prompt, or an agent Markdown file; v1 has not yet decided which locations research and exploration use.
+Durable role instructions for one Subagent role, stored in an explicitly selected agent Markdown file.
 _Avoid_: Agent profile, built-in role
+
+**Investigation**:
+A bounded, isolated Subagent task that gathers evidence and returns only the answer the Orchestrator needs; it may optionally create one declared report through a restricted capability.
+_Avoid_: Research role, Exploration role, workflow
+
+**Thinking level**:
+The Pi setting controlling how much model reasoning a Subagent uses; for GPT models this maps to reasoning effort.
+_Avoid_: Effort
 
 **Added context cost**:
 The measured increase in fresh-session input tokens caused by loading a subagent package against an otherwise identical session.
