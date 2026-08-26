@@ -1,8 +1,10 @@
 import { readdir } from "node:fs/promises";
 import { cases, type Variant } from "./cases.ts";
 
-const resultsDir = new URL("./results/", import.meta.url).pathname;
-const files = (await readdir(resultsDir)).filter((name) => name.endsWith(".jsonl")).sort();
+const model = process.env.MODEL ?? "openai-codex/gpt-5.6-luna";
+const resultsSubdir = process.env.RESULTS_SUBDIR?.replace(/^\/+|\/+$/g, "");
+const resultsDir = new URL(`./results/${resultsSubdir ? `${resultsSubdir}/` : ""}`, import.meta.url).pathname;
+const files = (await readdir(resultsDir)).filter((name) => name.endsWith(".jsonl") || name.endsWith(".jsonl.gz")).sort();
 
 type Row = {
   scenario: string;
@@ -25,17 +27,22 @@ function finalText(jsonl: string): string | undefined {
 
 const rows: Row[] = [];
 for (const file of files) {
-  const match = file.match(/^(.*)--(v1|arhen)--(\d+)\.jsonl$/);
+  const match = file.match(/^(.*)--(v1|arhen)--(\d+)\.jsonl(?:\.gz)?$/);
   if (!match) continue;
   const [, id, variantRaw, repetitionRaw] = match;
   const variant = variantRaw as Variant;
   const test = cases.find((item) => item.id === id);
   if (!test) continue;
-  const text = finalText(await Bun.file(`${resultsDir}${file}`).text());
+  const bytes = await Bun.file(`${resultsDir}${file}`).arrayBuffer();
+  const jsonl = file.endsWith(".gz") ? new TextDecoder().decode(Bun.gunzipSync(bytes)) : new TextDecoder().decode(bytes);
+  const text = finalText(jsonl);
   let answer: Record<string, string> | null = null;
   try {
     answer = JSON.parse(text ?? "");
-  } catch {}
+  } catch {
+    const object = text?.match(/\{[\s\S]*\}/)?.[0];
+    try { answer = JSON.parse(object ?? ""); } catch {}
+  }
   const expected = test.expected[variant];
   const passed = Object.entries(expected).filter(([key, value]) => answer?.[key] === value).length;
   rows.push({ scenario: id, variant, repetition: Number(repetitionRaw), passed, total: Object.keys(expected).length, answer });
@@ -52,9 +59,9 @@ const v1 = totals("v1");
 const arhen = totals("arhen");
 
 const lines = [
-  "# Luna operator-comprehension check",
+  "# Model operator-comprehension check",
   "",
-  "Model: `openai-codex/gpt-5.6-luna`; Thinking level: `medium`; tools/context/extensions disabled.",
+  `Model: \`${model}\`; Thinking level: \`medium\`; tools/context/extensions disabled.`,
   "",
   "The observations are deterministic, source-anchored projections. This checks whether a parent model reads each observable contract correctly; it does not execute either runtime or estimate failure frequency.",
   "",
@@ -67,7 +74,7 @@ const lines = [
   "",
   "## Interpretation",
   "",
-  "Accuracy alone is not the semantic verdict: Luna can often read Arhen's text correctly. The material differences are what the contracts make representable: v1 has `partial` and `timed_out`, queue/setup/run stages, labelled partial results, a non-terminal cancellation phase, and a visible persistence retry path. The out-of-order control guards against claiming an advantage where both contracts are all-settled and input-ordered.",
+  `Accuracy alone is not the semantic verdict: ${model} can often read Arhen's text correctly. The material differences are what the contracts make representable: v1 has \`partial\` and \`timed_out\`, queue/setup/run stages, labelled partial results, a non-terminal cancellation phase, and a visible persistence retry path. The out-of-order control guards against claiming an advantage where both contracts are all-settled and input-ordered.`,
   "",
 ];
 await Bun.write(`${resultsDir}summary.md`, lines.join("\n"));

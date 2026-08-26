@@ -26,6 +26,16 @@ No additional lifecycle state or parent-facing tool is warranted. V1 remains nar
 | Unusable requested model | reject before registration, no silent substitution | preflight may fall back to the parent session model and records a note | Keep fail-closed preflight |
 | Out-of-order completion | all-settled and input-ordered | all-settled and input-ordered | Do not claim a v1 advantage here |
 
+## Additional OpenRouter Ox Alpha check
+
+The exact `openrouter/stealth/ox-alpha` alias returned HTTP 404 for every attempted cell: OpenRouter said its testing period had ended, identified Ox Alpha as **Z.ai GLM 5.3 Flash**, and directed callers to [`z-ai/glm-5.3-flash`](https://openrouter.ai/z-ai/glm-5.3-flash). The same matrix was therefore rerun through that public replacement at medium Thinking level.
+
+- v1: **54/54** exact operator-comprehension fields.
+- Arhen: **53/54** exact fields.
+- The sole miss normalized Arhen's explicitly `failed` mixed-batch aggregate to `partial`, despite correctly retaining siblings, hiding failed-child partial text, and preserving input order. This is consistent with the semantic verdict: `partial` is the more natural mixed outcome, while Arhen's aggregate label makes the operator translate between the reported state and the underlying child facts.
+
+These are two repetitions per cell, not a model-quality benchmark. Full results: [`results/ox-alpha/summary.md`](results/ox-alpha/summary.md).
+
 ## One specification clarification before the battery freezes
 
 Make `inspect` distinguish **host lifecycle diagnostics** from child outcomes in its schema, not only in prose. In particular, while a Delegation is `finalizing`, expose a bounded diagnostic such as:

@@ -16,7 +16,14 @@ bun prototype/failure-semantics/run.ts
 
 This runs every source-anchored observation twice with `openai-codex/gpt-5.6-luna` at medium Thinking level, no tools, no repository context, no skills, and no extensions. Raw Pi JSONL is gzip-compressed in `results/`; [`results/summary.md`](results/summary.md) scores exact operator-comprehension fields.
 
-Set `REPETITIONS` or `CONCURRENCY` to override the defaults.
+Set `REPETITIONS` or `CONCURRENCY` to override the defaults. Override the model and isolate its results with:
+
+```sh
+MODEL=openrouter/z-ai/glm-5.3-flash RESULTS_SUBDIR=ox-alpha \
+  bun prototype/failure-semantics/run.ts
+```
+
+OpenRouter retired `stealth/ox-alpha` during this prototype and identified it as Z.ai GLM 5.3 Flash. The additional run therefore uses the replacement public model id; see [`results/ox-alpha/summary.md`](results/ox-alpha/summary.md).
 
 ## Boundary
 

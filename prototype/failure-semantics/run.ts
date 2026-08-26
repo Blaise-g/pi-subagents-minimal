@@ -3,7 +3,9 @@ import { cases, promptFor, type Variant } from "./cases.ts";
 
 const repetitions = Number(process.env.REPETITIONS ?? "2");
 const concurrency = Number(process.env.CONCURRENCY ?? "4");
-const resultsDir = new URL("./results/", import.meta.url).pathname;
+const model = process.env.MODEL ?? "openai-codex/gpt-5.6-luna";
+const resultsSubdir = process.env.RESULTS_SUBDIR?.replace(/^\/+|\/+$/g, "");
+const resultsDir = new URL(`./results/${resultsSubdir ? `${resultsSubdir}/` : ""}`, import.meta.url).pathname;
 await mkdir(resultsDir, { recursive: true });
 
 const jobs = cases.flatMap((test) =>
@@ -23,7 +25,7 @@ async function run(job: (typeof jobs)[number]) {
       "--no-context-files",
       "--no-skills",
       "--no-extensions",
-      "--model", "openai-codex/gpt-5.6-luna",
+      "--model", model,
       "--thinking", "medium",
       promptFor(job.test, job.variant),
     ],
