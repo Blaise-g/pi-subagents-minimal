@@ -64,8 +64,9 @@ jobs:
       - name: Fresh tarball installation
         shell: bash
         run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
           TARBALL=$(npm pack --silent)
           mkdir fresh && cd fresh
           npm init -y >/dev/null
           npm install --ignore-scripts --save-exact ../"$TARBALL" @earendil-works/pi-coding-agent@"$PI_VERSION"
-          node -e "const p=require('./node_modules/pi-subagents-minimal/package.json'); if(p.version!=='1.0.0'||p.pi.extensions.length!==1) process.exit(1)"
+          node -e "const p=require('./node_modules/pi-subagents-minimal/package.json'); if(p.version!==process.argv[1]||p.pi.extensions.length!==1) process.exit(1)" "$PACKAGE_VERSION"
