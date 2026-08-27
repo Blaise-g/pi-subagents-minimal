@@ -84,6 +84,10 @@ describe("release qualification", () => {
     expect(workflow).toContain("install -l npm:pi-subagents-minimal@");
     expect(workflow).toContain("environment: npm");
 
+    const qualification = await readFile(resolve(root, ".github/workflows/qualification.yml"), "utf8");
+    expect(qualification).toContain('PACKAGE_VERSION=$(node -p "require(\'./package.json\').version")');
+    expect(qualification).not.toContain("p.version!=='1.0.0'");
+
     const publish = workflow.indexOf("npm publish --provenance --access public");
     expect(publish).toBeGreaterThan(workflow.indexOf("Fresh exact-version candidate install"));
     expect(publish).toBeGreaterThan(workflow.indexOf("Create release record"));

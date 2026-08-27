@@ -1,7 +1,7 @@
 # Canonical v1 Implementation Contract
 
 Status: **Approved for implementation**
-Package: `pi-subagents-minimal@1.0.0`  
+Stable release target: `pi-subagents-minimal@1.0.0`
 Contract schema: `1`
 
 This document is the sole normative implementation handoff for v1. The Wayfinder tickets linked in the change-to-evidence map retain rationale and experimental detail; if their wording conflicts with this document, this document controls after approval.
