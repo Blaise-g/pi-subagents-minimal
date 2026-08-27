@@ -95,6 +95,7 @@ export function createExtension(overrides: Partial<ExtensionDependencies> = {}) 
           dependencies.startRuntime?.(configuration.value);
         }
       });
+      pi.on("session_shutdown", () => executeDelegation!.shutdown());
     }
   };
 }
