@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import type { StartupConfig } from "./config.ts";
 import {
   createAgentSession,
   DefaultResourceLoader,
@@ -89,7 +90,46 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
 type TerminalEnvelope = { schemaVersion: 1; delegationId: string; outcome: "succeeded"; completedAt: string; taskCount: 1; order: "input"; children: [{ index: 0; outcome: "succeeded"; effectiveModel: string; effectiveThinking: ThinkingLevel; result: string }] };
 type RecordState = { phase: "queued" | "running" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: never[] };
 
-export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: RuntimeDependencies, agentDefinition: Promise<string>) {
+const utf8Bytes = (value: string) => Buffer.byteLength(value, "utf8");
+const fail = (code: string, message: string): never => { throw new Error(`[${code}] ${message}`); };
+
+function validateSingleInput(input: { mode: string; task?: TaskSpecification }): TaskSpecification {
+  if (input.mode !== "single") fail("INPUT_INVALID", "Expected one single Task specification");
+  const task = input.task;
+  if (task === undefined) throw new Error("[INPUT_INVALID] Expected one single Task specification");
+  if (task.agent !== "investigation") fail("AGENT_UNKNOWN", "Agent must be investigation");
+  const taskBytes = utf8Bytes(task.task);
+  if (taskBytes < 1 || taskBytes > 16 * 1024) fail("INPUT_INVALID", "task must be 1..16384 UTF-8 bytes");
+  if (task.model !== undefined) {
+    const bytes = utf8Bytes(task.model);
+    if (bytes < 1 || bytes > 256 || !/^[^/]+\/[^/]+$/.test(task.model)) fail("INPUT_INVALID", "model must be one provider/model pair of at most 256 UTF-8 bytes");
+  }
+  if (task.reportPath !== undefined) {
+    const bytes = utf8Bytes(task.reportPath);
+    if (bytes < 1 || bytes > 1024 || !/^artifacts\/(?!.*(?:^|\/)\.\.?(?:\/|$))(?!.*\/\/)[^\\]+\.md$/.test(task.reportPath)) {
+      fail("REPORT_PATH_INVALID", "reportPath must be a safe normalized Markdown path beneath artifacts/");
+    }
+    // Report execution is introduced by the report tracer; admitting it now would grant no writer capability.
+    fail("INPUT_INVALID", "Declared reports are not available in this release slice");
+  }
+  return task;
+}
+
+async function boundedPreflight<T>(timeoutMs: number, callerSignal: AbortSignal, operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  if (callerSignal.aborted) fail("PREFLIGHT_TIMEOUT", "Preflight was aborted");
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(callerSignal.reason);
+  callerSignal.addEventListener("abort", onAbort, { once: true });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => { controller.abort(); reject(new Error("[PREFLIGHT_TIMEOUT] Preflight exceeded the Setup timeout")); }, timeoutMs);
+  });
+  const aborted = new Promise<never>((_, reject) => controller.signal.addEventListener("abort", () => reject(new Error("[PREFLIGHT_TIMEOUT] Preflight was aborted")), { once: true }));
+  try { return await Promise.race([operation(controller.signal), deadline, aborted]); }
+  finally { if (timer) clearTimeout(timer); callerSignal.removeEventListener("abort", onAbort); }
+}
+
+export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: RuntimeDependencies, agentDefinition: Promise<string>, config: StartupConfig) {
   const records = new Map<string, RecordState>();
   let activation = Promise.resolve();
   const updateActivation = (wanted: boolean) => activation = activation.then(() => {
@@ -118,22 +158,26 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
   });
 
   return async (input: { mode: "single"; task: TaskSpecification }, signal: AbortSignal, ctx: ExtensionContext) => {
-    if (input.mode !== "single" || input.task.agent !== "investigation" || input.task.reportPath !== undefined) throw new Error("[INPUT_INVALID] This release slice accepts one read-only investigation");
-    const bytes = Buffer.byteLength(input.task.task);
-    if (bytes < 1 || bytes > 16 * 1024) throw new Error("[INPUT_INVALID] task must be 1..16384 UTF-8 bytes");
-    const parentSession = ctx.sessionManager as typeof ctx.sessionManager & { isPersisted?: () => boolean };
-    if (parentSession.isPersisted?.() === false || (!parentSession.isPersisted && !ctx.sessionManager.getSessionFile())) throw new Error("[PARENT_SESSION_EPHEMERAL] Parent session must be persisted");
-    const modelRuntime = await dependencies.createModelRuntime(signal);
-    const modelName = input.task.model ?? (ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined);
-    if (!modelName || !/^[^/]+\/[^/]+$/.test(modelName)) throw new Error("[MODEL_NOT_FOUND] A provider/model is required");
-    const [provider, id] = modelName.split("/") as [string, string];
-    const model = modelRuntime.getModel(provider, id);
-    if (!model) throw new Error("[MODEL_NOT_FOUND] Model was not found");
-    const available = await modelRuntime.getAvailable(undefined, { signal });
-    if (!available.some((candidate) => candidate.provider === provider && candidate.id === id)) throw new Error("[MODEL_UNAVAILABLE] Model authentication is unavailable");
-    const effectiveThinking = input.task.thinking ?? ctx.thinkingLevel ?? "off";
-    if (model.thinkingLevelMap?.[effectiveThinking] === null) throw new Error("[THINKING_UNSUPPORTED] Thinking level is unsupported");
-    const definition = await agentDefinition;
+    const admitted = await boundedPreflight(config.setupTimeoutMs, signal, async (preflightSignal) => {
+      const task = validateSingleInput(input);
+      const modelName = task.model ?? (ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined);
+      if (modelName === undefined) throw new Error("[MODEL_NOT_FOUND] A provider/model is required");
+      const effectiveThinking = task.thinking ?? ctx.thinkingLevel ?? "off";
+      const modelRuntime = await dependencies.createModelRuntime(preflightSignal);
+      const [provider, id] = modelName.split("/") as [string, string];
+      const model = modelRuntime.getModel(provider, id);
+      if (model === undefined) throw new Error("[MODEL_NOT_FOUND] Model was not found");
+      const available = await modelRuntime.getAvailable(undefined, { signal: preflightSignal });
+      if (!available.some((candidate) => candidate.provider === provider && candidate.id === id)) fail("MODEL_UNAVAILABLE", "Model authentication is unavailable");
+      if ((!model.reasoning && effectiveThinking !== "off") || model.thinkingLevelMap?.[effectiveThinking] === null) fail("THINKING_UNSUPPORTED", "Thinking level is unsupported");
+      const parentSession = ctx.sessionManager as typeof ctx.sessionManager & { isPersisted?: () => boolean };
+      if (typeof parentSession.isPersisted !== "function" || !parentSession.isPersisted()) fail("PARENT_SESSION_EPHEMERAL", "Parent session must be persisted");
+      const definition = await agentDefinition;
+      const maximumEnvelope = compact({ schemaVersion: 1, delegationId: "d_00000000-0000-4000-8000-000000000000", outcome: "succeeded", completedAt: "9999-12-31T23:59:59.999Z", taskCount: 1, order: "input", children: [{ index: 0, outcome: "succeeded", effectiveModel: modelName, effectiveThinking, result: "x" }] });
+      if (utf8Bytes(maximumEnvelope) > 32 * 1024) fail("ENVELOPE_BUDGET_EXCEEDED", "Protected Terminal envelope metadata exceeds its budget");
+      return { task, modelName, effectiveThinking, modelRuntime, model, definition };
+    });
+    const { task, modelName, effectiveThinking, modelRuntime, model, definition } = admitted;
     const delegationId = dependencies.id();
     const record: RecordState = { phase: "queued", childPhase: "queued", unread: false, diagnostics: [] };
     records.set(delegationId, record);
@@ -142,10 +186,10 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
       let child: ChildSession | undefined;
       try {
         record.childPhase = "setup";
-        child = await dependencies.createChild({ cwd: ctx.cwd, task: input.task.task, model, thinking: effectiveThinking, agentDefinition: definition }, modelRuntime);
+        child = await dependencies.createChild({ cwd: ctx.cwd, task: task.task, model, thinking: effectiveThinking, agentDefinition: definition }, modelRuntime);
         let started = false;
         const unsubscribe = child.subscribe((event) => { if (!started && event.type === "agent_start") { started = true; record.phase = "running"; record.childPhase = "running"; } });
-        try { await child.prompt(input.task.task, { expandPromptTemplates: false }); } finally { unsubscribe(); }
+        try { await child.prompt(task.task, { expandPromptTemplates: false }); } finally { unsubscribe(); }
         const answer = assistantText(child.messages);
         if (!started || answer?.stopReason !== "stop" || !answer.text) throw new Error("Child did not produce a successful final answer");
         record.childPhase = "terminal"; record.phase = "finalizing";

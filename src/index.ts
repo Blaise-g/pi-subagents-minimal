@@ -73,7 +73,7 @@ export function createExtension(overrides: Partial<ExtensionDependencies> = {}) 
 
     const agentDefinition = dependencies.runtime.loadAgent();
     const executeDelegation = configuration.ok
-      ? installSuccessfulSingleRuntime(pi, dependencies.runtime, agentDefinition)
+      ? installSuccessfulSingleRuntime(pi, dependencies.runtime, agentDefinition, configuration.value)
       : undefined;
 
     pi.registerTool({

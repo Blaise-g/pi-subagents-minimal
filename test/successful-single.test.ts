@@ -41,7 +41,7 @@ test("runs an isolated Investigation and persists before notifying and consuming
       now: () => new Date("2026-01-02T03:04:05.000Z"),
       loadAgent: async () => "EXACT AGENT",
       createModelRuntime: async () => ({
-        getModel: () => ({ provider: "test", id: "model" }),
+        getModel: () => ({ provider: "test", id: "model", reasoning: true }),
         getAvailable: async () => [{ provider: "test", id: "model" }],
       }) as never,
       async createChild(request) { childRequest = request as unknown as Record<string, unknown>; return child; },
