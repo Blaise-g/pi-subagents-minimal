@@ -88,7 +88,8 @@ export function createExtension(overrides: Partial<ExtensionDependencies> = {}) 
     });
 
     if (configuration.ok) {
-      pi.on("session_start", () => {
+      pi.on("session_start", async (_event, ctx) => {
+        await executeDelegation!.reconstruct(ctx.sessionManager.getBranch());
         if (!runtimeStarted) {
           runtimeStarted = true;
           dependencies.startRuntime?.(configuration.value);
