@@ -13,6 +13,8 @@ jobs:
         with: { bun-version: 1.4.0 }
       - run: bun install
       - run: bun run typecheck
+      - name: Deterministic parent-context budgets
+        run: bun run budget:test
       - run: bun test
 
   packed-platform:

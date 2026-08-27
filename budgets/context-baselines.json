@@ -1,0 +1,18 @@
+{
+  "justification": "Initial approved v1 measurement baseline; deterministic values are reproduced by test/context-budget.test.ts.",
+  "protocol": { "pi": "0.84.3", "provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "medium", "session": "fresh --no-session project", "prompt": "Reply with exactly OK.", "repetitions": 2, "packagePromptText": "" },
+  "deterministic": {
+    "launchOnlyBytes": { "baseline": 1174, "ceiling": 4096 },
+    "controlOnlyBytes": { "baseline": 354, "ceiling": 2048 },
+    "bothActiveBytes": { "baseline": 1527, "ceiling": 6144 },
+    "addedPromptChars": { "baseline": 0, "ceiling": 1500 }
+  },
+  "provider": {
+    "ceiling": 1500,
+    "conditions": {
+      "launchOnly": { "baseline": 286, "repetitions": [286, 286] },
+      "dynamicControl": { "baseline": 86, "repetitions": [86, 86] },
+      "bothActive": { "baseline": 372, "repetitions": [372, 372] }
+    }
+  }
+}

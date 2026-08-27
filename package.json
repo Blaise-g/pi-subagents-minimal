@@ -25,6 +25,7 @@
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "pack:test": "bun test test/packed.test.ts"
+    "pack:test": "bun test test/packed.test.ts",
+    "budget:test": "bun test test/context-budget.test.ts"
   }
 }
