@@ -88,3 +88,4 @@ export function terminalEnvelopeFeasible(base: Omit<TerminalEnvelope, "children"
 }
 
 export const envelopeUtf8Bytes = (envelope: TerminalEnvelope): number => compactBytes(envelope);
+export const terminalEnvelopeWithinLimits = (envelope: TerminalEnvelope): boolean => variableBytes(envelope.children) <= VARIABLE_CAP && compactBytes(envelope) <= ENVELOPE_CAP;
