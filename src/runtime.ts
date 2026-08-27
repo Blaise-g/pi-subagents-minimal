@@ -12,13 +12,15 @@ import {
   type AgentSession,
   type ExtensionAPI,
   type ExtensionContext,
+  type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { StringEnum, type Api, type Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
+import { createReportWriter, validateReportPath, verifyReport, type ReportState } from "./report.ts";
 
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 export type TaskSpecification = { agent: "investigation"; task: string; model?: string; thinking?: ThinkingLevel; reportPath?: string };
-export type ChildRunRequest = { cwd: string; task: string; model: Model<Api>; thinking: ThinkingLevel; agentDefinition: string };
+export type ChildRunRequest = { cwd: string; task: string; model: Model<Api>; thinking: ThinkingLevel; agentDefinition: string; customTools?: ToolDefinition[] };
 export interface ChildSession { messages: readonly unknown[]; subscribe(listener: (event: { type: string }) => void): () => void; prompt(text: string, options?: { expandPromptTemplates?: boolean }): Promise<void>; dispose(): void; abort(): Promise<void> }
 export class ChildSetupError extends Error {
   constructor(readonly code: "RESOURCE_LOAD_FAILED" | "SESSION_CREATE_FAILED") { super(code); }
@@ -86,7 +88,8 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
       model: request.model,
       thinkingLevel: request.thinking as never,
       modelRuntime,
-      tools: ["read", "grep", "find", "ls"],
+      tools: request.customTools ? ["read", "grep", "find", "ls", "write_report"] : ["read", "grep", "find", "ls"],
+      customTools: request.customTools,
       resourceLoader: loader,
       sessionManager: SessionManager.inMemory(request.cwd),
       settingsManager,
@@ -96,7 +99,7 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
 };
 
 type ChildError = { stage: "queue" | "setup" | "run" | "projection"; code: string; message: string };
-type ChildOutcome = { index: 0; outcome: "succeeded" | "failed" | "timed_out" | "cancelled"; effectiveModel: string; effectiveThinking: ThinkingLevel; result?: string; partialResult?: string; error?: ChildError; truncation?: { field: "result" | "partialResult"; originalBytes: number; retainedBytes: number } };
+type ChildOutcome = { index: 0; outcome: "succeeded" | "failed" | "timed_out" | "cancelled"; effectiveModel: string; effectiveThinking: ThinkingLevel; result?: string; report?: { path: string; summary: string }; partialResult?: string; error?: ChildError; truncation?: { field: "result" | "report.summary" | "partialResult"; originalBytes: number; retainedBytes: number } };
 type TerminalEnvelope = { schemaVersion: 1; delegationId: string; outcome: ChildOutcome["outcome"]; completedAt: string; taskCount: 1; order: "input"; children: [ChildOutcome] };
 type HostDiagnostic = { stage: "cleanup" | "lifecycle" | "persistence"; code: string; message: string; at: string };
 type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancel?: () => Promise<void> };
@@ -122,14 +125,6 @@ function validateSingleInput(input: { mode: string; task?: TaskSpecification }):
   if (task.model !== undefined) {
     const bytes = utf8Bytes(task.model);
     if (bytes < 1 || bytes > 256 || !/^[^/]+\/[^/]+$/.test(task.model)) fail("INPUT_INVALID", "model must be one provider/model pair of at most 256 UTF-8 bytes");
-  }
-  if (task.reportPath !== undefined) {
-    const bytes = utf8Bytes(task.reportPath);
-    if (bytes < 1 || bytes > 1024 || !/^artifacts\/(?!.*(?:^|\/)\.\.?(?:\/|$))(?!.*\/\/)[^\\]+\.md$/.test(task.reportPath)) {
-      fail("REPORT_PATH_INVALID", "reportPath must be a safe normalized Markdown path beneath artifacts/");
-    }
-    // Report execution is introduced by the report tracer; admitting it now would grant no writer capability.
-    fail("INPUT_INVALID", "Declared reports are not available in this release slice");
   }
   return task;
 }
@@ -179,6 +174,7 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
   return async (input: { mode: "single"; task: TaskSpecification }, signal: AbortSignal, ctx: ExtensionContext) => {
     const admitted = await boundedPreflight(config.setupTimeoutMs, signal, async (preflightSignal) => {
       const task = validateSingleInput(input);
+      if (task.reportPath !== undefined) await validateReportPath(ctx.cwd, task.reportPath);
       const modelName = task.model ?? (ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined);
       if (modelName === undefined) throw new Error("[MODEL_NOT_FOUND] A provider/model is required");
       const effectiveThinking = task.thinking ?? ctx.thinkingLevel ?? "off";
@@ -210,7 +206,7 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
       const setTimer = dependencies.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
       const clearTimer = dependencies.clearTimer ?? ((handle) => clearTimeout(handle as ReturnType<typeof setTimeout>));
       const diagnostic = (code: string, message: string) => {
-        record.diagnostics.push({ stage: code.includes("DISPOSE") || code.includes("ABORT") ? "cleanup" : "lifecycle", code, message: safeMessage(message), at: dependencies.now().toISOString() });
+        record.diagnostics.push({ stage: code.includes("DISPOSE") || code.includes("ABORT") || code.includes("CLEANUP") ? "cleanup" : "lifecycle", code, message: safeMessage(message), at: dependencies.now().toISOString() });
         record.diagnostics = record.diagnostics.slice(-8);
       };
       const finish = async (outcome: ChildOutcome) => {
@@ -241,9 +237,11 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
         await finish({ ...base("cancelled"), error: { stage: started ? "run" : "setup", code: "CANCELLED", message: "Delegation was cancelled" } });
       };
       try {
+        const reportState: ReportState = { written: false, failed: false };
+        const customTools = task.reportPath === undefined ? undefined : [createReportWriter(ctx.cwd, task.reportPath, reportState, diagnostic)];
         record.childPhase = "setup";
         timer = setTimer(() => void finish(failure("setup", "SETUP_TIMEOUT", "Setup deadline expired", "timed_out")), config.setupTimeoutMs);
-        try { child = await dependencies.createChild({ cwd: ctx.cwd, task: task.task, model, thinking: effectiveThinking, agentDefinition: definition }, modelRuntime); }
+        try { child = await dependencies.createChild({ cwd: ctx.cwd, task: task.task, model, thinking: effectiveThinking, agentDefinition: definition, customTools }, modelRuntime); }
         catch (error) { const code = error instanceof ChildSetupError ? error.code : "SESSION_CREATE_FAILED"; await finish(failure("setup", code, code === "RESOURCE_LOAD_FAILED" ? "Subagent resources failed to load" : "Subagent session creation failed")); return; }
         const boundary = child.messages.length;
         unsubscribe = child.subscribe((event) => {
@@ -261,8 +259,17 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
         if (!answer?.text || !answer.stopReason || answer.stopReason === "toolUse") { await finish(failure("projection", "OUTPUT_MISSING", "Subagent produced no usable output")); return; }
         if (answer.stopReason === "length") { await finish(failure("run", "OUTPUT_LENGTH", "Subagent output reached its length limit")); return; }
         if (answer.stopReason !== "stop") { await finish(failure("run", "RUN_FAILED", "Subagent run did not complete successfully")); return; }
+        if (task.reportPath !== undefined) {
+          if (!reportState.written || !await verifyReport(ctx.cwd, task.reportPath)) {
+            await finish(failure(reportState.failed ? "run" : "projection", reportState.failed ? "REPORT_WRITE_FAILED" : "REPORT_MISSING", reportState.failed ? "The declared report write failed" : "The declared report is missing or unsafe")); return;
+          }
+          const summary = utf8Prefix(answer.text, 16 * 1024);
+          const success: ChildOutcome = { ...base("succeeded"), report: { path: task.reportPath, summary } };
+          if (utf8Bytes(summary) < utf8Bytes(answer.text)) success.truncation = { field: "report.summary", originalBytes: utf8Bytes(answer.text), retainedBytes: utf8Bytes(summary) };
+          await finish(success); return;
+        }
         const result = utf8Prefix(answer.text, 16 * 1024);
-        const success = { ...base("succeeded"), result };
+        const success: ChildOutcome = { ...base("succeeded"), result };
         if (utf8Bytes(result) < utf8Bytes(answer.text)) success.truncation = { field: "result", originalBytes: utf8Bytes(answer.text), retainedBytes: utf8Bytes(result) };
         await finish(success);
       } finally {
