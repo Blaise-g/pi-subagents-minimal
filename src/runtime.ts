@@ -20,9 +20,16 @@ export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhi
 export type TaskSpecification = { agent: "investigation"; task: string; model?: string; thinking?: ThinkingLevel; reportPath?: string };
 export type ChildRunRequest = { cwd: string; task: string; model: Model<Api>; thinking: ThinkingLevel; agentDefinition: string };
 export interface ChildSession { messages: readonly unknown[]; subscribe(listener: (event: { type: string }) => void): () => void; prompt(text: string, options?: { expandPromptTemplates?: boolean }): Promise<void>; dispose(): void; abort(): Promise<void> }
+export class ChildSetupError extends Error {
+  constructor(readonly code: "RESOURCE_LOAD_FAILED" | "SESSION_CREATE_FAILED") { super(code); }
+}
+
 export interface RuntimeDependencies {
   id(): string;
   now(): Date;
+  monotonicNow?(): number;
+  setTimer?(callback: () => void, milliseconds: number): unknown;
+  clearTimer?(handle: unknown): void;
   loadAgent(): Promise<string>;
   createModelRuntime(signal?: AbortSignal): Promise<ModelRuntime>;
   createChild(request: ChildRunRequest, modelRuntime: ModelRuntime): Promise<ChildSession>;
@@ -72,8 +79,9 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
       appendSystemPrompt: [request.agentDefinition],
       agentsFilesOverride: ({ agentsFiles }) => ({ agentsFiles: agentsFiles.filter((file) => resolve(file.path).startsWith(`${root}/`) || resolve(file.path) === root) }),
     });
-    await loader.reload();
-    const { session } = await createAgentSession({
+    try { await loader.reload(); } catch { throw new ChildSetupError("RESOURCE_LOAD_FAILED"); }
+    let session: AgentSession;
+    try { ({ session } = await createAgentSession({
       cwd: request.cwd,
       model: request.model,
       thinkingLevel: request.thinking as never,
@@ -82,15 +90,26 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
       resourceLoader: loader,
       sessionManager: SessionManager.inMemory(request.cwd),
       settingsManager,
-    });
-    return session as AgentSession;
+    }) as { session: AgentSession }); } catch { throw new ChildSetupError("SESSION_CREATE_FAILED"); }
+    return session;
   },
 };
 
-type TerminalEnvelope = { schemaVersion: 1; delegationId: string; outcome: "succeeded"; completedAt: string; taskCount: 1; order: "input"; children: [{ index: 0; outcome: "succeeded"; effectiveModel: string; effectiveThinking: ThinkingLevel; result: string }] };
-type RecordState = { phase: "queued" | "running" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: never[] };
+type ChildError = { stage: "queue" | "setup" | "run" | "projection"; code: string; message: string };
+type ChildOutcome = { index: 0; outcome: "succeeded" | "failed" | "timed_out" | "cancelled"; effectiveModel: string; effectiveThinking: ThinkingLevel; result?: string; partialResult?: string; error?: ChildError; truncation?: { field: "result" | "partialResult"; originalBytes: number; retainedBytes: number } };
+type TerminalEnvelope = { schemaVersion: 1; delegationId: string; outcome: ChildOutcome["outcome"]; completedAt: string; taskCount: 1; order: "input"; children: [ChildOutcome] };
+type HostDiagnostic = { stage: "cleanup" | "lifecycle" | "persistence"; code: string; message: string; at: string };
+type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancel?: () => Promise<void> };
 
 const utf8Bytes = (value: string) => Buffer.byteLength(value, "utf8");
+function utf8Prefix(value: string, maximum: number): string {
+  if (utf8Bytes(value) <= maximum) return value;
+  let end = maximum;
+  const bytes = Buffer.from(value, "utf8");
+  while (end > 0 && (bytes[end]! & 0xc0) === 0x80) end--;
+  return bytes.subarray(0, end).toString("utf8");
+}
+const safeMessage = (message: string) => utf8Prefix(message.replace(/(?:[A-Za-z]:)?\/(?:[^\s/]+\/)+[^\s]*/g, "[path]").replace(/(?:authorization|cookie|api[-_]?key|token|headers?)\s*[:=]\s*\S+/gi, "$1=[redacted]"), 512);
 const fail = (code: string, message: string): never => { throw new Error(`[${code}] ${message}`); };
 
 function validateSingleInput(input: { mode: string; task?: TaskSpecification }): TaskSpecification {
@@ -145,8 +164,8 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
     async execute(_id, input) {
       const record = records.get(input.delegationId);
       if (!record) throw new Error("[INPUT_INVALID] Unknown Delegation id");
-      if (input.action === "cancel" && record.phase !== "terminal") throw new Error("[INPUT_INVALID] Cancellation is not available for this completed tracer");
-      if (record.phase !== "terminal") return textResult({ schemaVersion: 1, delegationId: input.delegationId, phase: record.phase, children: [{ index: 0, phase: record.childPhase }], diagnostics: [] });
+      if (input.action === "cancel" && record.phase !== "terminal" && record.phase !== "finalizing") await record.cancel?.();
+      if (record.phase !== "terminal") return textResult({ schemaVersion: 1, delegationId: input.delegationId, phase: record.phase, children: [{ index: 0, phase: record.childPhase }], diagnostics: record.diagnostics });
       if (record.unread) {
         const json = compact(record.envelope);
         pi.appendEntry("pi-subagents-minimal:consumed", { schemaVersion: 1, delegationId: input.delegationId, envelopeSha256: createHash("sha256").update(json).digest("hex"), consumedAt: dependencies.now().toISOString() });
@@ -184,22 +203,73 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
     await updateActivation(true);
     void (async () => {
       let child: ChildSession | undefined;
-      try {
-        record.childPhase = "setup";
-        child = await dependencies.createChild({ cwd: ctx.cwd, task: task.task, model, thinking: effectiveThinking, agentDefinition: definition }, modelRuntime);
-        let started = false;
-        const unsubscribe = child.subscribe((event) => { if (!started && event.type === "agent_start") { started = true; record.phase = "running"; record.childPhase = "running"; } });
-        try { await child.prompt(task.task, { expandPromptTemplates: false }); } finally { unsubscribe(); }
-        const answer = assistantText(child.messages);
-        if (!started || answer?.stopReason !== "stop" || !answer.text) throw new Error("Child did not produce a successful final answer");
+      let unsubscribe: (() => void) | undefined;
+      let timer: unknown;
+      let settled = false;
+      let started = false;
+      const setTimer = dependencies.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
+      const clearTimer = dependencies.clearTimer ?? ((handle) => clearTimeout(handle as ReturnType<typeof setTimeout>));
+      const diagnostic = (code: string, message: string) => {
+        record.diagnostics.push({ stage: code.includes("DISPOSE") || code.includes("ABORT") ? "cleanup" : "lifecycle", code, message: safeMessage(message), at: dependencies.now().toISOString() });
+        record.diagnostics = record.diagnostics.slice(-8);
+      };
+      const finish = async (outcome: ChildOutcome) => {
+        if (settled) { diagnostic("LATE_RESULT_REJECTED", "Late settlement evidence was rejected"); return; }
+        settled = true;
+        if (timer !== undefined) clearTimer(timer);
+        unsubscribe?.(); unsubscribe = undefined;
+        if (outcome.outcome !== "succeeded") void child?.abort().catch(() => diagnostic("CHILD_ABORT_FAILED", "Subagent abort failed"));
+        try { child?.dispose(); } catch { diagnostic("CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); }
+        child = undefined;
         record.childPhase = "terminal"; record.phase = "finalizing";
-        const result = Buffer.from(answer.text).subarray(0, 16 * 1024).toString("utf8").replace(/\uFFFD$/, "");
-        const envelope: TerminalEnvelope = { schemaVersion: 1, delegationId, outcome: "succeeded", completedAt: dependencies.now().toISOString(), taskCount: 1, order: "input", children: [{ index: 0, outcome: "succeeded", effectiveModel: modelName, effectiveThinking, result }] };
-        pi.appendEntry("pi-subagents-minimal:terminal", envelope);
+        const envelope: TerminalEnvelope = { schemaVersion: 1, delegationId, outcome: outcome.outcome, completedAt: dependencies.now().toISOString(), taskCount: 1, order: "input", children: [outcome] };
+        try { pi.appendEntry("pi-subagents-minimal:terminal", envelope); }
+        catch { record.diagnostics.push({ stage: "persistence", code: "TERMINAL_PERSIST_FAILED", message: "Terminal envelope persistence failed", at: dependencies.now().toISOString() }); return; }
         record.envelope = envelope; record.phase = "terminal"; record.unread = true;
         await updateActivation(true);
-        pi.sendMessage({ customType: "pi-subagents-minimal:completion", content: `Delegation ${delegationId} completed: succeeded. Use delegation_control inspect to retrieve it.`, display: true }, { deliverAs: "steer", triggerTurn: true });
-      } finally { child?.dispose(); }
+        try { pi.sendMessage({ customType: "pi-subagents-minimal:completion", content: `Delegation ${delegationId} completed: ${envelope.outcome}. Use delegation_control inspect to retrieve it.`, display: true }, { deliverAs: "steer", triggerTurn: true }); }
+        catch { diagnostic("COMPLETION_NOTIFY_FAILED", "Completion notification failed"); }
+      };
+      const base = (outcome: ChildOutcome["outcome"]): ChildOutcome => ({ index: 0, outcome, effectiveModel: modelName, effectiveThinking });
+      const partial = () => { const text = assistantText(child?.messages ?? [])?.text; return text ? utf8Prefix(text, 4096) : undefined; };
+      const failure = (stage: ChildError["stage"], code: string, message: string, outcome: "failed" | "timed_out" = "failed"): ChildOutcome => {
+        const value = base(outcome); value.error = { stage, code, message: safeMessage(message) }; const text = partial(); if (text) value.partialResult = text; return value;
+      };
+      record.cancel = async () => {
+        if (settled) return;
+        record.phase = "cancelling";
+        await finish({ ...base("cancelled"), error: { stage: started ? "run" : "setup", code: "CANCELLED", message: "Delegation was cancelled" } });
+      };
+      try {
+        record.childPhase = "setup";
+        timer = setTimer(() => void finish(failure("setup", "SETUP_TIMEOUT", "Setup deadline expired", "timed_out")), config.setupTimeoutMs);
+        try { child = await dependencies.createChild({ cwd: ctx.cwd, task: task.task, model, thinking: effectiveThinking, agentDefinition: definition }, modelRuntime); }
+        catch (error) { const code = error instanceof ChildSetupError ? error.code : "SESSION_CREATE_FAILED"; await finish(failure("setup", code, code === "RESOURCE_LOAD_FAILED" ? "Subagent resources failed to load" : "Subagent session creation failed")); return; }
+        const boundary = child.messages.length;
+        unsubscribe = child.subscribe((event) => {
+          if (!started && !settled && event.type === "agent_start") {
+            started = true; clearTimer(timer); record.phase = "running"; record.childPhase = "running";
+            timer = setTimer(() => void finish(failure("run", "RUN_TIMEOUT", "Running deadline expired", "timed_out")), config.runTimeoutMs);
+          }
+        });
+        try { await child.prompt(task.task, { expandPromptTemplates: false }); }
+        catch { await finish(failure(started ? "run" : "setup", started ? "RUN_FAILED" : "PROMPT_REJECTED", started ? "Subagent run failed" : "Prompt was rejected")); return; }
+        if (settled) return;
+        if (!started) { await finish(failure("setup", "PROMPT_REJECTED", "Prompt resolved before the Subagent started")); return; }
+        let answer: ReturnType<typeof assistantText>;
+        try { answer = assistantText(child.messages.slice(boundary)); } catch { await finish(failure("projection", "PROJECTION_FAILED", "Subagent output projection failed")); return; }
+        if (!answer?.text || !answer.stopReason || answer.stopReason === "toolUse") { await finish(failure("projection", "OUTPUT_MISSING", "Subagent produced no usable output")); return; }
+        if (answer.stopReason === "length") { await finish(failure("run", "OUTPUT_LENGTH", "Subagent output reached its length limit")); return; }
+        if (answer.stopReason !== "stop") { await finish(failure("run", "RUN_FAILED", "Subagent run did not complete successfully")); return; }
+        const result = utf8Prefix(answer.text, 16 * 1024);
+        const success = { ...base("succeeded"), result };
+        if (utf8Bytes(result) < utf8Bytes(answer.text)) success.truncation = { field: "result", originalBytes: utf8Bytes(answer.text), retainedBytes: utf8Bytes(result) };
+        await finish(success);
+      } finally {
+        unsubscribe?.();
+        try { child?.dispose(); } catch { diagnostic("CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); }
+        child = undefined; unsubscribe = undefined; record.cancel = undefined;
+      }
     })();
     return textResult({ schemaVersion: 1, delegationId, phase: "queued", taskCount: 1 });
   };
