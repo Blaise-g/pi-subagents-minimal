@@ -19,7 +19,7 @@ For diff review, force the two children to complete Spec then Standards and veri
 
 ## Provider execution and human review
 
-1. Commit the harness and fixture state, require a clean checkout, and confirm `pi --version` and `pi auth status --provider openai-codex` without printing credentials.
+1. Commit the harness and fixture state, require a clean checkout, and confirm `pi --version` and `pi auth check --provider openai-codex` without printing credentials.
 2. Run `bun run battery:run artifacts/behavioral/provider-run`. Use `--trial=<id>` only for harness diagnosis; it is not full evidence. A full run writes 36 immutable files under `observations/`. Preserve failed files and use a new run directory for any oracle-policy rerun.
 3. Generate the hidden operator packet and blank scorecard with `bun run battery:review artifacts/behavioral/provider-run/observations artifacts/behavioral/provider-run/scorecard.json`.
 4. A human—not a model that produced or is currently judging its own answers—reviews every terminal answer and captured report against the packet's predeclared binary inventory. The human enters reviewer identity, an ISO review time, and an explicit `true` or `false` for every check. Keep the packet and scorecard outside Subagent fixture context.

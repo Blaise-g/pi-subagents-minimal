@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { execFile, execFileSync } from "node:child_process";
 import { basename, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -119,7 +119,8 @@ async function prepareWorkspace(plan: TrialPlan, runDir: string, fixtureCommit: 
   await mkdir(dirname(cwd), { recursive: true });
   if (plan.scenario === "exploration" || plan.scenario === "research") {
     await exec("git", ["worktree", "add", "--detach", cwd, fixtureCommit], { cwd: ROOT });
-    await symlink(resolve(ROOT, "node_modules"), resolve(cwd, "node_modules"), "dir");
+    await mkdir(resolve(cwd, "node_modules/@earendil-works"), { recursive: true });
+    await cp(resolve(ROOT, "node_modules/@earendil-works/pi-coding-agent"), resolve(cwd, "node_modules/@earendil-works/pi-coding-agent"), { recursive: true });
     return { cwd, cleanup: async () => { await exec("git", ["worktree", "remove", "--force", cwd], { cwd: ROOT }); } };
   }
   await exec("bash", [resolve(ROOT, "tools/prepare-battery-fixture.sh"), cwd, plan.scenario === "diff-review" ? "committed" : "uncommitted"], { cwd: ROOT });
@@ -148,6 +149,8 @@ async function runTrial(plan: TrialPlan, runDir: string, fixtureCommit: string, 
   const childEventsPath = resolve(runDir, "sessions", `${plan.id}-children.json`);
   await mkdir(sessionDir, { recursive: true });
   const beforeStatus = await status(workspace.cwd);
+  const expectedInitialStatus = plan.scenario === "simplification" ? " M src/users.ts" : "";
+  if (beforeStatus !== expectedInitialStatus) throw new Error(`${plan.id}: prepared fixture has unexpected initial status ${JSON.stringify(beforeStatus)}`);
   const started = new Date();
   const args = ["--mode", "json", "--session-dir", sessionDir, "--provider", "openai-codex", "--model", "gpt-5.6-luna", "--thinking", plan.thinking, "--no-extensions", "-e", resolve(ROOT, "tools/behavioral-observer-extension.ts"), "--no-skills", "--no-prompt-templates", "--no-themes", "--no-context-files", "--tools", "delegate,delegation_control"];
   const skill = REVIEW_SKILLS[plan.scenario];
