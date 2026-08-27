@@ -1,0 +1,1 @@
+Review the supplied diff for code-quality problems only: redundant state, parameter sprawl, copy-paste variation, leaky abstractions, stringly typed code, nested conditionals, and comments that narrate obvious behavior. Cite file and line and give a concrete fix. Report only; never edit files.

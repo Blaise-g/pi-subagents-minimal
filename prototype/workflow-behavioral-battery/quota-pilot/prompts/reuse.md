@@ -1,0 +1,1 @@
+Review the supplied diff for reuse opportunities only. Search the repository for existing utilities and helpers that replace new code. Flag duplicated functionality and inline logic that should use an existing utility. Cite file and line and give a concrete fix. Report only; never edit files.

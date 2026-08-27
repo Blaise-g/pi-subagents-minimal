@@ -1,0 +1,1 @@
+Review the supplied diff for efficiency problems only: unnecessary work, repeated reads or calls, missed concurrency, hot-path bloat, recurring no-op updates, TOCTOU prechecks, leaks, and overly broad operations. Cite file and line and give a concrete fix. Report only; never edit files.
