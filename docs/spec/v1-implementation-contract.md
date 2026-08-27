@@ -1,6 +1,6 @@
 # Canonical v1 Implementation Contract
 
-Status: **Frozen for approval**  
+Status: **Corrected and frozen for re-approval**
 Package: `pi-subagents-minimal@1.0.0`  
 Contract schema: `1`
 
@@ -181,7 +181,10 @@ The complete preflight is bounded by the configured Setup timeout and the callin
 3. report-path validation and duplicate normalized-path rejection across the batch;
 4. independent inheritance and resolution of every effective model and Thinking level;
 5. current authentication availability checks through the extension-owned public `ModelRuntime`;
-6. confirmation that the parent `ctx.sessionManager.isPersisted()`.
+6. confirmation that the parent `ctx.sessionManager.isPersisted()`;
+7. protected-envelope feasibility using every resolved effective model/Thinking tuple, every complete declared report path, fixed canonical framing, and the maximum non-truncatable representation of each legal child outcome.
+
+The feasibility check reserves report paths in full and proves that at least one legal bounded canonical representation remains beneath both the 24 KiB pool and 32 KiB envelope ceilings. It is conservative: truncatable model output contributes no assumed capacity. A request that cannot satisfy the proof is rejected before registration; report paths are never shortened to admit it.
 
 Parent extension-registered providers unavailable through the public extension-owned `ModelRuntime` are unsupported in v1; they fail preflight rather than using a private registry seam.
 
@@ -199,6 +202,7 @@ type PreflightErrorCode =
   | "REPORT_PATH_INVALID"
   | "REPORT_PATH_CONFLICT"
   | "PARENT_SESSION_EPHEMERAL"
+  | "ENVELOPE_BUDGET_EXCEEDED"
   | "PREFLIGHT_TIMEOUT";
 ```
 
@@ -276,7 +280,7 @@ For each child:
 - discover the nearest `.git` ancestor as repository boundary, falling back to `ctx.cwd`, and retain only standard Pi context files whose canonical paths are inside it;
 - exclude global and above-repository context files;
 - use the extension-owned public `ModelRuntime`, resolved model, exact Thinking level, and strict tool allowlist;
-- subscribe only for invocation-boundary completion evidence;
+- subscribe before prompting and retain only invocation-bound run-start and completion evidence;
 - always unsubscribe, abort if needed, dispose, and release references in `finally`.
 
 A Concurrency slot is acquired before resource loading and held through child settlement and cleanup. Queued children hold no slot.
@@ -305,12 +309,14 @@ Tests compare the packaged file bytes with the contract fixture. A material beha
 - Extension-wide Concurrency slots: default 4, configurable 1–4.
 - One strict FIFO spans all Delegations in registration and input order.
 - Queue deadline: from registration, default 5 minutes.
-- Setup deadline: after slot acquisition through resource loading, session creation, and prompt acceptance, default 30 seconds.
-- Running deadline: from Pi prompt acceptance through settlement, default 15 minutes.
+- Setup deadline: after slot acquisition through resource loading, session creation, prompt preprocessing, and the Child run-start boundary, default 30 seconds.
+- Running deadline: from the Child run-start boundary through settlement, default 15 minutes.
 - Cancellation settlement: one shared Delegation clock, default 30 seconds.
 - Graceful shutdown: one global clock, default 30 seconds.
 
-`session.prompt(..., {preflightResult})` is the acceptance boundary. `true` ends setup, starts the Running deadline, and moves the child to `running`; `false` produces `PROMPT_REJECTED`.
+The **Child run-start boundary** is the first invocation-bound public `agent_start` event. Subscribe before invoking exactly one ordinary `session.prompt()` call, with child extensions and prompt/skill/template expansion disabled. That first event atomically ends Setup, starts the Running deadline, and moves the child to `running`; later `agent_start` events from retries or compaction continuations do not restart either deadline.
+
+A `prompt()` throw, rejection, or resolution before that event produces setup-stage `PROMPT_REJECTED`. After the event, promise rejection or error settlement produces run-stage `RUN_FAILED`. Setup timeout or cancellation racing with the event obeys atomic first-transition-wins. No `PromptOptions.preflightResult` or other internal RPC hook is used.
 
 ### 8.2 Legal transitions
 
@@ -333,9 +339,9 @@ setup   -> running | failed | timed_out | cancelled
 running -> succeeded | failed | timed_out | cancelled
 ```
 
-Delegation `running` begins when any child prompt is accepted and may coexist with queued/setup siblings. `finalizing` begins only when every child outcome is immutable and no Subagent remains live. Failed persistence self-loops in `finalizing`. `terminal` begins only after successful terminal-envelope append.
+Delegation `running` begins when any child crosses the Child run-start boundary and may coexist with queued/setup siblings. `finalizing` begins only when every child outcome is immutable and no Subagent remains live. Failed envelope construction or persistence self-loops in `finalizing`. `terminal` begins only after successful terminal-envelope append.
 
-Child terminal transitions are atomic first-transition-wins. A terminal result observed first wins; otherwise the first accepted timeout or cancellation claim wins. Already-terminal children are never rewritten and late results are rejected.
+Child terminal transitions are atomic first-transition-wins. Run completion, timeout, and cancellation first produce competing **Settlement evidence**. The winning evidence is projected and classified as part of the first terminal transition; it is not itself a provisional Terminal outcome. If projection of winning run evidence fails, that first transition is directly to `failed` with `PROJECTION_FAILED`. Once selected, a Terminal outcome is never rewritten, and late evidence is rejected.
 
 ### 8.3 Truthful phases
 
@@ -377,19 +383,20 @@ Cancellation is idempotent. Repetition does not extend the deadline. Cancellatio
 
 ### 9.1 Terminal-message projection
 
-Record the message boundary before prompt acceptance. After settlement, scan only later messages and select the final assistant message. Join nonempty text blocks in source order with `\n\n`, then trim outer Unicode whitespace.
+Record the message boundary before invoking the child prompt. After Settlement evidence wins, scan only later messages attributable to that invocation and select the final assistant message. Join nonempty text blocks in source order with `\n\n`, then trim outer Unicode whitespace.
 
-| Evidence | Child classification |
+| Winning evidence | First and only child Terminal outcome |
 |---|---|
-| `stopReason: "stop"` and nonempty projected text or valid report | candidate `succeeded` |
+| `stopReason: "stop"` and nonempty projected text or valid report | `succeeded` |
 | `length` | `failed`, `OUTPUT_LENGTH`, useful text as `partialResult` |
 | `error` | `failed`, `RUN_FAILED`, useful text as `partialResult` |
 | `aborted` after winning host cancellation | `cancelled`, no partial text |
 | other `aborted` | `failed`, `RUN_FAILED` |
 | `toolUse`, missing assistant message, or empty text | `failed`, `OUTPUT_MISSING` |
 | missing/unsafe required report | `failed`, `REPORT_MISSING` or `REPORT_WRITE_FAILED` |
+| projection exception or invalid conversion | `failed`, `PROJECTION_FAILED` |
 
-A no-report success uses `result`; a report success uses the projected text as `report.summary` and the normalized declared path as `report.path`.
+Projection and classification occur within the atomic terminal transition. Settlement evidence is not a provisional outcome: a projection fault therefore selects `failed` once rather than rewriting an earlier `succeeded` outcome. A no-report success uses `result`; a report success uses the projected text as `report.summary` and the complete normalized declared path as `report.path`.
 
 ### 9.2 Child errors
 
@@ -452,24 +459,25 @@ type ChildOutcome = {
 
 Exactly one of `result` or `report` exists on success. Neither exists on non-success. Task prompts, transcripts, usage, completion order, and internal absolute paths are excluded.
 
-### 9.4 Size limits
+### 9.4 Size limits and canonical allocation
 
 - Single successful text: 16 KiB UTF-8.
 - Failed/timed-out `partialResult`: 4 KiB UTF-8.
 - Error message: 512 UTF-8 bytes.
-- Flat-batch variable-text pool: 24 KiB.
+- Flat-batch variable-content pool: 24 KiB.
 - Complete compact canonical envelope: 32 KiB.
 
-For allocation:
+Each child contributes at most one truncatable field: `result`, `report.summary`, or `partialResult`. Apply the 16 KiB result/summary cap or 4 KiB partial-result cap before batch allocation. A report path is protected content: retain its complete normalized UTF-8 value or reject the Delegation at preflight; never truncate it during projection.
 
-1. encode every candidate result, report summary/path, partial result, and truncation metadata as UTF-8;
-2. apply the 16 KiB/4 KiB field cap;
-3. for a batch, repeatedly divide remaining pool by fields still needing bytes, in input order; short fields consume actual bytes and release the remainder;
-4. assign indivisible remainder bytes one at a time in input order;
-5. truncate only at valid UTF-8 boundaries and state original/retained byte counts;
-6. include report paths and truncation metadata in the 24 KiB accounting;
-7. compact-serialize and, if over 32 KiB, reduce variable text deterministically in reverse input order;
-8. if fixed metadata cannot fit, replace affected projections with bounded `PROJECTION_FAILED` outcomes.
+Canonical allocation is input-order- and completion-order-independent:
+
+1. For every integer byte waterline `w` from zero through 16 KiB, derive each truncatable field as its longest valid UTF-8 prefix no longer than `min(w, its individual cap)`. Preserve at least one complete code point for a required no-report success result.
+2. Add the UTF-8 bytes of all complete report paths and retained fields. For every truncated field, add the UTF-8 bytes of its actual compact-JSON `truncation` object, including exact `originalBytes` and `retainedBytes` values. This is the 24 KiB variable-content cost.
+3. Construct the complete compact canonical envelope for that waterline. Its actual UTF-8 serialization is the 32 KiB envelope cost.
+4. Select the greatest common waterline satisfying both ceilings. Short fields consume only their actual bytes and thereby raise the common waterline available to longer fields. A field's retained prefix always ends at a valid UTF-8 boundary.
+5. Leave capacity that cannot raise the common waterline unused. Never distribute remainder bytes by input index, completion order, or reverse order.
+
+The feasibility proof in preflight guarantees a legal protected representation. If an invariant-breaking envelope-construction fault nevertheless occurs after all child Terminal outcomes are immutable, keep the Delegation in `finalizing`, expose `TERMINAL_PROJECTION_FAILED`, and retry only on `inspect` and graceful shutdown. Do not replace, reclassify, or otherwise rewrite any child outcome.
 
 Never persist or return an oversized envelope.
 
@@ -488,6 +496,7 @@ type HostDiagnostic = {
   code:
     | "CONFIG_INVALID"
     | "HOST_UNSUPPORTED"
+    | "TERMINAL_PROJECTION_FAILED"
     | "TERMINAL_PERSIST_FAILED"
     | "CONSUMED_MARKER_PERSIST_FAILED"
     | "PERSISTED_ENTRY_UNREADABLE"
@@ -509,7 +518,7 @@ Each message is at most 512 UTF-8 bytes. One inspection exposes at most eight di
 
 Terminalization order is:
 
-1. project the canonical envelope;
+1. construct the canonical envelope from immutable child Terminal outcomes using section 9.4;
 2. append it synchronously with Pi's public API:
 
    ```ts
@@ -520,7 +529,7 @@ Terminalization order is:
 4. activate `delegation_control` if needed;
 5. unless shutdown is active, send one completion message.
 
-Successful `appendEntry()` is the durability boundary; v1 makes no fsync claim. If append throws, remain `finalizing`, send no completion, retain the immutable candidate envelope in memory, expose `TERMINAL_PERSIST_FAILED`, and retry on inspect and graceful shutdown.
+Successful `appendEntry()` is the durability boundary; v1 makes no fsync claim. If canonical construction throws or violates either size invariant, remain `finalizing`, send no completion, expose `TERMINAL_PROJECTION_FAILED`, and retry on inspect and graceful shutdown without rewriting child outcomes. If append throws, remain `finalizing`, send no completion, retain the immutable candidate envelope in memory, expose `TERMINAL_PERSIST_FAILED`, and retry on inspect and graceful shutdown.
 
 ### 11.2 Completion message
 
@@ -611,12 +620,12 @@ Run without a live model through the highest stable public extension boundary, u
 5. **Running cancellation:** completed sibling survives; live sibling enters cancelling; shared deadline disposes references, rejects late result, and aggregate is cancelled.
 6. **Persistence fault:** failed terminal append leaves finalizing, sends no completion, exposes a bounded diagnostic, and retries without rewriting child outcomes.
 7. **Deadline stages:** independently expire queue, setup, and run clocks with exact stage/code while siblings continue.
-8. **Preflight rejection:** unknown Agent, unusable model/auth, unsupported Thinking, oversized batch/text, duplicate/unsafe report path, ephemeral parent, invalid config, and timeout return no id and start no child.
+8. **Preflight rejection:** unknown Agent, unusable model/auth, unsupported Thinking, oversized batch/text, duplicate/unsafe report path, infeasible protected envelope metadata, ephemeral parent, invalid config, and timeout return no id and start no child.
 9. **Terminal races:** result/cancel and result/timeout in both orders obey atomic first-transition-wins and reject late results.
 10. **Graceful shutdown:** live and unread Delegations coexist; one global grace applies, live work is cancelled, persist-before-exit is attempted, and persisted unread envelopes survive reload.
 11. **Notification failure:** persisted result remains terminal/unread and inspectable with `COMPLETION_NOTIFY_FAILED`.
 12. **Capability isolation:** exact tool/resource matrix, no parent messages, no arbitrary Agent/extension/skill loading, and writer closure/path enforcement.
-13. **Projection bounds:** UTF-8 boundary cases, water-filling reference model, 16/4/24/32 KiB boundaries, sanitized errors, and no content duplication.
+13. **Projection bounds:** UTF-8 boundary cases; an independent common-waterline reference model; permutation invariance across input and completion order; complete report-path reservation; indivisible-remainder non-allocation; 16/4/24/32 KiB boundaries; projection-fault finalizing/retry behavior; immutable child classifications; sanitized errors; and no content duplication.
 14. **Branch semantics:** only active-branch valid envelopes/markers reconstruct; unknown versions and digest mismatches fail explicitly.
 
 ### 14.2 Provider-backed Behavioral battery
@@ -681,11 +690,13 @@ Every release candidate, tested from the packed artifact, must pass:
 | Contract assertion | Originating decision | Required evidence |
 |---|---|---|
 | Public `createAgentSession`, fresh in-memory child, public ModelRuntime, invocation-boundary projection, abort/dispose | [Determine the minimum correct Pi child-session runtime](https://github.com/Blaise-g/pi-subagents-minimal/issues/4) | child integration, isolation, stop-reason, cancellation, cleanup tests |
+| Public invocation-bound `agent_start` Child run-start boundary with promise-based rejection classification | [Identify a public Pi prompt-acceptance boundary](https://github.com/Blaise-g/pi-subagents-minimal/issues/15) | event/promise race, pre-start resolution/rejection, retry/compaction, and timeout/cancellation tests |
 | Exact Investigation ownership and no arbitrary Agent discovery | [Place research and exploration instructions](https://github.com/Blaise-g/pi-subagents-minimal/issues/5) | packaged-byte test, resource/capability isolation, full battery after material change |
 | One permanent launch tool, dynamic inspect/cancel, persist-first inbox, steering notification | [Define the minimal background lifecycle contract](https://github.com/Blaise-g/pi-subagents-minimal/issues/6) | dynamic-tool, recovery, notification ordering/failure tests |
 | 8-child/4-slot FIFO, deadlines, all-settled ordering, outcome precedence, cancellation races, shutdown | [Define concurrency, cancellation, and failure semantics](https://github.com/Blaise-g/pi-subagents-minimal/issues/7) | controlled-clock/state-machine/reference-scheduler tests with red proof |
 | Explicit partial/timeout outcomes, finalizing, visible partial result, separate Host diagnostics | [Compare v1 and Arhen failure semantics](https://github.com/Blaise-g/pi-subagents-minimal/issues/12) | exact envelope and persistence/cleanup fault tests |
 | 4/2/6 KiB tool budgets, 1,500-token/prompt bounds, 16/4/24/32 KiB envelope bounds, drift policy | [Set the v1 context budget](https://github.com/Blaise-g/pi-subagents-minimal/issues/8) | payload snapshots, provider token protocol, UTF-8 boundary/property tests, independent water-fill model |
+| Protected report paths, common-waterline allocation, preflight feasibility, and projection without Terminal-outcome rewrites | [Correct canonical contract acceptance, allocation, and projection semantics](https://github.com/Blaise-g/pi-subagents-minimal/issues/16) | permutation/property tests, protected-metadata rejection, envelope-fault finalizing/retry, and immutable-outcome tests |
 | Four workflows, Luna low/medium/high claim, deterministic lifecycle matrix, cadence | [Freeze the workflow behavioral battery](https://github.com/Blaise-g/pi-subagents-minimal/issues/9) | frozen fixture/oracle harness and recorded 36-trial release run |
 | Local read-only Investigation, closure-bound Markdown report, preflight completeness, `triggerTurn: true` | [Approve the v1 implementation specification](https://github.com/Blaise-g/pi-subagents-minimal/issues/10) | forbidden-capability, unsafe path, preflight no-id/no-start, idle/active notification tests |
 | Exact npm artifact, Pi/Node/Bun boundary, platform matrix, upgrade/release policy | [Set the v1 packaging and compatibility boundary](https://github.com/Blaise-g/pi-subagents-minimal/issues/11) | packed-install/platform/version/tarball/provenance gates |

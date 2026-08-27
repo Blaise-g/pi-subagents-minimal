@@ -39,3 +39,63 @@ _Avoid_: Token footprint, Context budget
 **Context budget**:
 The enforced upper bound against which Added context cost is judged after the baseline measurements establish an evidence-based value.
 _Avoid_: Token target, measured cost
+
+**Concurrency slot**:
+One extension-wide permission for a Subagent to run; queued Subagents do not occupy a slot.
+_Avoid_: Worker slot, thread
+
+**Queue deadline**:
+The maximum time a Subagent may wait for a Concurrency slot before terminating as timed out.
+_Avoid_: Stall timeout
+
+**Child run-start boundary**:
+The first invocation-bound evidence that a Subagent's agent run has begun; it ends Setup and starts the Running deadline.
+_Avoid_: Prompt acceptance
+
+**Running deadline**:
+The maximum time from the Child run-start boundary until that Subagent settles.
+_Avoid_: Stall watchdog, silence timeout
+
+**All-settled batch**:
+A Flat batch in which each independent Subagent is allowed to reach its own terminal outcome, regardless of sibling failures.
+_Avoid_: Fail-fast batch
+
+**Settlement evidence**:
+The observed run completion, timeout, or cancellation claim from which a Subagent's first and only Terminal outcome is selected.
+_Avoid_: Terminal result, provisional outcome
+
+**Terminal outcome**:
+The immutable classification of a settled Subagent or Delegation: succeeded, partial, failed, timed out, or cancelled as applicable.
+_Avoid_: Status, exit status
+
+**Partial result**:
+Bounded Subagent output retained as diagnostic evidence from a failed or timed-out run; it is never treated as a successful result.
+_Avoid_: Result
+
+**Behavioral battery**:
+The frozen verification protocol combining deterministic lifecycle conformance with provider-backed trials of the named v1 workflows; its claims apply only to the exact tested model and Thinking tuples.
+_Avoid_: Benchmark, test suite
+
+**Workflow trial**:
+One fresh-session provider-backed execution of a frozen workflow scenario at one exact model and Thinking tuple, scored against its independent oracle.
+_Avoid_: Benchmark run, eval
+
+**Lifecycle conformance case**:
+One deterministic scenario that drives a public Delegation transition or fault and checks the resulting lifecycle state, envelope, or control behavior without relying on model quality.
+_Avoid_: Workflow trial, smoke test
+
+**Task specification**:
+One bounded Subagent request within a Delegation, naming the Investigation role, objective, optional model and Thinking level, and optional declared report path.
+_Avoid_: Job, child config, agent invocation
+
+**Declared report path**:
+The single project-relative Markdown destination a Task specification authorizes an Investigation to create or replace beneath the approved report root.
+_Avoid_: Output path, artifact directory
+
+**Terminal envelope**:
+The canonical, bounded, immutable record of one settled Delegation and its input-ordered child outcomes.
+_Avoid_: Result blob, transcript, run summary
+
+**Host diagnostic**:
+A bounded observation about extension configuration, compatibility, persistence, cleanup, or lifecycle that does not alter a Subagent or Delegation outcome.
+_Avoid_: Child error, warning log
