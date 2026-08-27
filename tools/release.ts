@@ -2,7 +2,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export type EvidenceKind = "deterministic" | "packed" | "budget" | "behavioral" | "release" | "typecheck";
+export type EvidenceKind = "deterministic" | "packed" | "budget" | "release" | "typecheck";
 export interface EvidenceReference { kind: EvidenceKind; file: string; assertion: string }
 interface EvidenceMapping { evidence: string[] }
 export interface EvidenceInventory {
@@ -14,7 +14,7 @@ export interface EvidenceInventory {
   changeToEvidence: Array<{ assertion: string } & EvidenceMapping>;
 }
 
-const evidenceKinds = new Set<EvidenceKind>(["deterministic", "packed", "budget", "behavioral", "release", "typecheck"]);
+const evidenceKinds = new Set<EvidenceKind>(["deterministic", "packed", "budget", "release", "typecheck"]);
 
 function contractSections(contract: string): string[] {
   return [...contract.matchAll(/^#{2,3} (\d+(?:\.\d+)?)\.? /gm)].map((match) => match[1]!);

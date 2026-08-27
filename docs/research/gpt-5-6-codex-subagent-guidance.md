@@ -1,6 +1,6 @@
 # GPT-5.6 and Codex guidance for minimal Subagents
 
-_Research snapshot: 2026-08-26. Supporting asset for [Place research and exploration instructions](https://github.com/Blaise-g/pi-subagents-minimal/issues/5) and the later behavioral battery. This records reusable primary-source findings; it does not make OpenAI's hosted Multi-agent runtime normative for this Pi extension._
+_Research snapshot: 2026-08-26. Supporting asset for [Place research and exploration instructions](https://github.com/Blaise-g/pi-subagents-minimal/issues/5). This records reusable primary-source findings; it does not make OpenAI's hosted Multi-agent runtime normative for this Pi extension._
 
 ## Conclusions to carry into the specification
 
@@ -72,7 +72,7 @@ The current official source says the same at OpenAI Codex commit [`f542017`](htt
 
 ## Verification consequences
 
-The frozen behavioral battery should compare at least:
+A future one-off evaluation designed for these questions could compare:
 
 - Luna/low or medium for narrow exploration;
 - Terra/medium for routine evidence synthesis;
@@ -82,8 +82,8 @@ The frozen behavioral battery should compare at least:
 - concise direct return versus report-pointer return;
 - task-relevant tools versus an unnecessarily broad tool set.
 
-Measure success against the workflow oracle first, then input/output tokens, tool calls, latency, and cost. Lower resource use counts as an improvement only if the answer retains required evidence and completeness, matching OpenAI's evaluation advice.
+Define correctness criteria before measuring input/output tokens, tool calls, latency, and cost. Lower resource use counts as an improvement only if the answer retains required evidence and completeness, matching OpenAI's evaluation advice.
 
 ## Related local evidence
 
-The directional [Investigation role-shape prototype](https://github.com/Blaise-g/pi-subagents-minimal/tree/983b4b1b4af0bb9db656e45cd1bfdd3ad3f8ea8d/prototype/investigation-role-shape) found no material correctness difference between one combined definition and separate Research/Exploration definitions in four matched tasks. In that single stochastic run, specialized definitions used 26 fewer tool calls and about 14% fewer summed child input tokens. This supports keeping one lean v1 definition while retaining both task shapes in the behavioral battery.
+The directional [Investigation role-shape prototype](https://github.com/Blaise-g/pi-subagents-minimal/tree/983b4b1b4af0bb9db656e45cd1bfdd3ad3f8ea8d/prototype/investigation-role-shape) found no material correctness difference between one combined definition and separate Research/Exploration definitions in four matched tasks. In that single stochastic run, specialized definitions used 26 fewer tool calls and about 14% fewer summed child input tokens. This supports keeping one lean v1 definition; future one-off evaluations can include both task shapes when relevant.

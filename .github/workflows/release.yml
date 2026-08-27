@@ -51,7 +51,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run budget:test
-      - run: bun run battery:test
       - run: bun test
 
   packed-platform:

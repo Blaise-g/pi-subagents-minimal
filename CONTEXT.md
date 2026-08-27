@@ -72,13 +72,17 @@ _Avoid_: Status, exit status
 Bounded Subagent output retained as diagnostic evidence from a failed or timed-out run; it is never treated as a successful result.
 _Avoid_: Result
 
-**Behavioral battery**:
-The frozen verification protocol combining deterministic lifecycle conformance with provider-backed trials of the named v1 workflows; its claims apply only to the exact tested model and Thinking tuples.
-_Avoid_: Benchmark, test suite
+**Recorded evaluation**:
+A deliberate, one-off assessment of observable model behavior whose inputs, outputs, evaluation criteria, result, model and provider versions, and source commit are retained for review. It is supporting evidence, not a mechanical CI or release gate.
+_Avoid_: Behavioral battery, benchmark, test suite
 
-**Workflow trial**:
-One fresh-session provider-backed execution of a frozen workflow scenario at one exact model and Thinking tuple, scored against its independent oracle.
-_Avoid_: Benchmark run, eval
+**Quality smoke**:
+A small provider-backed check used when directional confidence in observable model behavior is useful; it does not certify a release.
+_Avoid_: Release gate, conformance test
+
+**Significant behavioral change**:
+A change intended or reasonably expected to alter observable model behavior, including Agent instructions, public prompts, model or Thinking selection, capability isolation, result projection or aggregation, participating skills, or evaluation fixtures. The change author records whether this boundary is crossed.
+_Avoid_: Any large diff, routine refactor
 
 **Lifecycle conformance case**:
 One deterministic scenario that drives a public Delegation transition or fault and checks the resulting lifecycle state, envelope, or control behavior without relying on model quality.

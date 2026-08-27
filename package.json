@@ -35,11 +35,6 @@
     "typecheck": "tsc --noEmit",
     "pack:test": "bun test test/packed.test.ts",
     "budget:test": "bun test test/context-budget.test.ts",
-    "battery:test": "bun test test/behavioral-battery.test.ts",
-    "battery:plan": "bun tools/behavioral-battery.ts plan",
-    "battery:run": "bun tools/behavioral-runner.ts run",
-    "battery:review": "bun tools/behavioral-runner.ts review",
-    "battery:finalize": "bun tools/behavioral-runner.ts finalize",
     "release:verify": "bun tools/release.ts verify-inventory"
   }
 }

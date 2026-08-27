@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   buildReleaseRecord,
@@ -15,6 +15,24 @@ describe("release qualification", () => {
     const contract = await readFile(resolve(root, "docs/spec/v1-implementation-contract.md"), "utf8");
     const inventory = JSON.parse(await readFile(resolve(root, "docs/release-evidence.json"), "utf8")) as EvidenceInventory;
     expect(await validateEvidenceInventory(root, contract, inventory)).toEqual([]);
+  });
+
+  test("the release contract contains only mechanical evidence and no retired battery assets", async () => {
+    const inventory = JSON.parse(await readFile(resolve(root, "docs/release-evidence.json"), "utf8")) as EvidenceInventory;
+    expect(new Set(Object.values(inventory.evidenceCatalog).map(({ kind }) => kind))).not.toContain("behavioral");
+
+    const retired = [
+      ".github/workflows/behavioral-battery.yml",
+      "docs/behavioral-battery.md",
+      "tools/behavioral-battery.ts",
+      "tools/behavioral-runner.ts",
+      "tools/behavioral-observer-extension.ts",
+      "tools/prepare-battery-fixture.sh",
+      "test/behavioral-battery.test.ts",
+      "test/behavioral-runner.test.ts",
+      "test/behavioral",
+    ];
+    for (const path of retired) await expect(access(resolve(root, path))).rejects.toThrow();
   });
 
   test("rejects an untagged, mismatched, or dirty publication candidate", () => {
@@ -58,6 +76,7 @@ describe("release qualification", () => {
     expect(workflow).not.toContain("issues: read");
     expect(workflow).not.toContain("gh api");
     expect(workflow).not.toContain("tools/behavioral-battery.ts verify");
+    expect(workflow).not.toContain("battery:");
     expect(workflow).not.toContain("provider-backed");
     expect(workflow).toContain("bun tools/release.ts verify-inventory");
     expect(workflow).toContain("bun tools/release.ts verify-identity");
