@@ -1,6 +1,8 @@
 # Releasing an exact version
 
-`pi-subagents-minimal` is published only by `.github/workflows/release.yml`. A local `npm publish` is not a release path.
+`pi-subagents-minimal` is currently versioned below `1.0.0` for local iteration. Local path installation is documented in the README and does not use this procedure.
+
+A public package version is published only by `.github/workflows/release.yml`. A local `npm publish` is not a release path. For the planned stable release, first set the package version to `1.0.0` in a reviewed commit, then follow every step below.
 
 ## Prerequisites
 
