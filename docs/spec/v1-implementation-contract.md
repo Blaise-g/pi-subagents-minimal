@@ -1,6 +1,6 @@
 # Canonical v1 Implementation Contract
 
-Status: **Corrected and frozen for re-approval**
+Status: **Approved for implementation**
 Package: `pi-subagents-minimal@1.0.0`  
 Contract schema: `1`
 
