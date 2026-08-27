@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "exploration": ["loadSkills and mergePaths identified", "enabled/discovered precede additional paths", "canonical duplicate keeps earliest", "additional paths load when discovery disabled", "no invented symbols or precedence"],
+  "research": ["fresh SessionManager.inMemory", "no resume, fork, or parent-message injection", "conversation history distinguished from DefaultResourceLoader project context", "uncertainty stated", "every material claim cited"],
+  "diff-review": {
+    "standards": ["forbidden any", "safeJoin bypass", "query-side mutation", "sequential independent reads"],
+    "spec": ["path escape", "missing UserNotFound", "unrequested write", "removal or scope creep"]
+  },
+  "simplification": {
+    "reuse": ["existing safeJoin", "redundant profile read"],
+    "quality": ["query side effect", "over-broad or stringly error/state"],
+    "efficiency": ["duplicate read", "sequential independent reads", "recurring write"]
+  },
+  "policy": ["all checks are binary present/correct/grounded", "fabricated hard findings fail", "ambiguity requires oracle revision and affected-cell rerun", "observed failures cannot be waived"]
+}

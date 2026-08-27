@@ -26,6 +26,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "pack:test": "bun test test/packed.test.ts",
-    "budget:test": "bun test test/context-budget.test.ts"
+    "budget:test": "bun test test/context-budget.test.ts",
+    "battery:test": "bun test test/behavioral-battery.test.ts",
+    "battery:plan": "bun tools/behavioral-battery.ts plan"
   }
 }
