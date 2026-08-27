@@ -2,18 +2,7 @@ import { randomUUID, createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import type { StartupConfig } from "./config.ts";
-import {
-  createAgentSession,
-  DefaultResourceLoader,
-  ModelRuntime,
-  SessionManager,
-  SettingsManager,
-  getAgentDir,
-  type AgentSession,
-  type ExtensionAPI,
-  type ExtensionContext,
-  type ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import { createAgentSession, DefaultResourceLoader, ModelRuntime, SessionManager, SettingsManager, getAgentDir, type AgentSession, type ExtensionAPI, type ExtensionContext, type ToolDefinition } from "@earendil-works/pi-coding-agent";
 import { StringEnum, type Api, type Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { createReportWriter, validateReportPath, verifyReport, type ReportState } from "./report.ts";
@@ -23,276 +12,46 @@ export type { ThinkingLevel } from "./projection.ts";
 export type TaskSpecification = { agent: "investigation"; task: string; model?: string; thinking?: ThinkingLevel; reportPath?: string };
 export type ChildRunRequest = { cwd: string; task: string; model: Model<Api>; thinking: ThinkingLevel; agentDefinition: string; customTools?: ToolDefinition[] };
 export interface ChildSession { messages: readonly unknown[]; subscribe(listener: (event: { type: string }) => void): () => void; prompt(text: string, options?: { expandPromptTemplates?: boolean }): Promise<void>; dispose(): void; abort(): Promise<void> }
-export class ChildSetupError extends Error {
-  constructor(readonly code: "RESOURCE_LOAD_FAILED" | "SESSION_CREATE_FAILED") { super(code); }
-}
+export class ChildSetupError extends Error { constructor(readonly code: "RESOURCE_LOAD_FAILED" | "SESSION_CREATE_FAILED") { super(code); } }
+export interface RuntimeDependencies { id(): string; now(): Date; monotonicNow?(): number; setTimer?(callback: () => void, milliseconds: number): unknown; clearTimer?(handle: unknown): void; loadAgent(): Promise<string>; createModelRuntime(signal?: AbortSignal): Promise<ModelRuntime>; createChild(request: ChildRunRequest, modelRuntime: ModelRuntime): Promise<ChildSession>; }
 
-export interface RuntimeDependencies {
-  id(): string;
-  now(): Date;
-  monotonicNow?(): number;
-  setTimer?(callback: () => void, milliseconds: number): unknown;
-  clearTimer?(handle: unknown): void;
-  loadAgent(): Promise<string>;
-  createModelRuntime(signal?: AbortSignal): Promise<ModelRuntime>;
-  createChild(request: ChildRunRequest, modelRuntime: ModelRuntime): Promise<ChildSession>;
-}
-
-const compact = (value: unknown) => JSON.stringify(value);
-const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: compact(value) }], details: {} });
-
-function assistantText(messages: readonly unknown[]): { text: string; stopReason?: string } | undefined {
-  for (let index = messages.length - 1; index >= 0; index--) {
-    const message = messages[index];
-    if (!message || typeof message !== "object" || (message as { role?: unknown }).role !== "assistant") continue;
-    const candidate = message as { content?: unknown; stopReason?: unknown };
-    if (!Array.isArray(candidate.content)) return undefined;
-    const text = candidate.content.flatMap((block) => block && typeof block === "object" && (block as { type?: unknown }).type === "text" && typeof (block as { text?: unknown }).text === "string" ? [(block as { text: string }).text] : []).filter(Boolean).join("\n\n").trim();
-    return { text, stopReason: typeof candidate.stopReason === "string" ? candidate.stopReason : undefined };
-  }
-  return undefined;
-}
-
-async function repositoryRoot(cwd: string): Promise<string> {
-  let cursor = await realpath(cwd);
-  while (true) {
-    try { await realpath(join(cursor, ".git")); return cursor; } catch { /* continue upward */ }
-    const parent = dirname(cursor);
-    if (parent === cursor) return await realpath(cwd);
-    cursor = parent;
-  }
-}
-
+async function repositoryRoot(cwd: string): Promise<string> { let cursor = await realpath(cwd); while (true) { try { await realpath(join(cursor, ".git")); return cursor; } catch {} const parent = dirname(cursor); if (parent === cursor) return await realpath(cwd); cursor = parent; } }
 export const defaultRuntimeDependencies: RuntimeDependencies = {
-  id: () => `d_${randomUUID().toLowerCase()}`,
-  now: () => new Date(),
-  loadAgent: () => readFile(new URL("../agents/investigation.md", import.meta.url), "utf8"),
-  createModelRuntime: (signal) => ModelRuntime.create({ signal }),
-  async createChild(request, modelRuntime) {
-    const root = await repositoryRoot(request.cwd);
-    const settingsManager = SettingsManager.inMemory({ retry: { enabled: true, maxRetries: 2 }, compaction: { enabled: true } });
-    const loader = new DefaultResourceLoader({
-      cwd: request.cwd,
-      agentDir: getAgentDir(),
-      settingsManager,
-      noExtensions: true,
-      noSkills: true,
-      noPromptTemplates: true,
-      noThemes: true,
-      appendSystemPrompt: [request.agentDefinition],
-      agentsFilesOverride: ({ agentsFiles }) => ({ agentsFiles: agentsFiles.filter((file) => resolve(file.path).startsWith(`${root}/`) || resolve(file.path) === root) }),
-    });
-    try { await loader.reload(); } catch { throw new ChildSetupError("RESOURCE_LOAD_FAILED"); }
-    let session: AgentSession;
-    try { ({ session } = await createAgentSession({
-      cwd: request.cwd,
-      model: request.model,
-      thinkingLevel: request.thinking as never,
-      modelRuntime,
-      tools: request.customTools ? ["read", "grep", "find", "ls", "write_report"] : ["read", "grep", "find", "ls"],
-      customTools: request.customTools,
-      resourceLoader: loader,
-      sessionManager: SessionManager.inMemory(request.cwd),
-      settingsManager,
-    }) as { session: AgentSession }); } catch { throw new ChildSetupError("SESSION_CREATE_FAILED"); }
-    return session;
+  id: () => `d_${randomUUID().toLowerCase()}`, now: () => new Date(), loadAgent: () => readFile(new URL("../agents/investigation.md", import.meta.url), "utf8"), createModelRuntime: (signal) => ModelRuntime.create({ signal }),
+  async createChild(request, modelRuntime) { const root = await repositoryRoot(request.cwd); const settingsManager = SettingsManager.inMemory({ retry: { enabled: true, maxRetries: 2 }, compaction: { enabled: true } }); const loader = new DefaultResourceLoader({ cwd: request.cwd, agentDir: getAgentDir(), settingsManager, noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, appendSystemPrompt: [request.agentDefinition], agentsFilesOverride: ({ agentsFiles }) => ({ agentsFiles: agentsFiles.filter((file) => resolve(file.path).startsWith(`${root}/`) || resolve(file.path) === root) }) });
+    try { await loader.reload(); } catch { throw new ChildSetupError("RESOURCE_LOAD_FAILED"); } let session: AgentSession; try { ({ session } = await createAgentSession({ cwd: request.cwd, model: request.model, thinkingLevel: request.thinking as never, modelRuntime, tools: request.customTools ? ["read", "grep", "find", "ls", "write_report"] : ["read", "grep", "find", "ls"], customTools: request.customTools, resourceLoader: loader, sessionManager: SessionManager.inMemory(request.cwd), settingsManager }) as { session: AgentSession }); } catch { throw new ChildSetupError("SESSION_CREATE_FAILED"); } return session;
   },
 };
 
 type HostDiagnostic = { stage: "cleanup" | "lifecycle" | "persistence"; code: string; message: string; at: string };
-type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancel?: () => Promise<void>; finalize?: () => Promise<void> };
-
-const utf8Bytes = (value: string) => Buffer.byteLength(value, "utf8");
-function utf8Prefix(value: string, maximum: number): string {
-  if (utf8Bytes(value) <= maximum) return value;
-  let end = maximum;
-  const bytes = Buffer.from(value, "utf8");
-  while (end > 0 && (bytes[end]! & 0xc0) === 0x80) end--;
-  return bytes.subarray(0, end).toString("utf8");
-}
-const safeMessage = (message: string) => utf8Prefix(message.replace(/(?:[A-Za-z]:)?\/(?:[^\s/]+\/)+[^\s]*/g, "[path]").replace(/(?:authorization|cookie|api[-_]?key|token|headers?)\s*[:=]\s*\S+/gi, "$1=[redacted]"), 512);
+type ResolvedTask = { task: TaskSpecification; modelName: string; thinking: ThinkingLevel; model: Model<Api> };
+type ChildState = { index: number; phase: "queued" | "setup" | "running" | "terminal"; resolved: ResolvedTask; outcome?: ChildOutcome; settling?: boolean; queueTimer?: unknown; cancel?: () => Promise<void> };
+type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; children: ChildState[]; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancellationAccepted: boolean; cancel?: () => Promise<void>; finalize?: () => Promise<void> };
+const compact = (value: unknown) => JSON.stringify(value); const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: compact(value) }], details: {} });
+const bytes = (value: string) => Buffer.byteLength(value, "utf8");
+function prefix(value: string, maximum: number) { if (bytes(value) <= maximum) return value; const data = Buffer.from(value); let end = maximum; while (end > 0 && (data[end]! & 0xc0) === 0x80) end--; return data.subarray(0, end).toString("utf8"); }
+const safeMessage = (value: string) => prefix(value.replace(/(?:[A-Za-z]:)?\/(?:[^\s/]+\/)+[^\s]*/g, "[path]").replace(/(?:authorization|cookie|api[-_]?key|token|headers?)\s*[:=]\s*\S+/gi, "$1=[redacted]"), 512);
 const fail = (code: string, message: string): never => { throw new Error(`[${code}] ${message}`); };
-
-function validateSingleInput(input: { mode: string; task?: TaskSpecification }): TaskSpecification {
-  if (input.mode !== "single") fail("INPUT_INVALID", "Expected one single Task specification");
-  const task = input.task;
-  if (task === undefined) throw new Error("[INPUT_INVALID] Expected one single Task specification");
-  if (task.agent !== "investigation") fail("AGENT_UNKNOWN", "Agent must be investigation");
-  const taskBytes = utf8Bytes(task.task);
-  if (taskBytes < 1 || taskBytes > 16 * 1024) fail("INPUT_INVALID", "task must be 1..16384 UTF-8 bytes");
-  if (task.model !== undefined) {
-    const bytes = utf8Bytes(task.model);
-    if (bytes < 1 || bytes > 256 || !/^[^/]+\/[^/]+$/.test(task.model)) fail("INPUT_INVALID", "model must be one provider/model pair of at most 256 UTF-8 bytes");
-  }
-  return task;
-}
-
-async function boundedPreflight<T>(timeoutMs: number, callerSignal: AbortSignal, operation: (signal: AbortSignal) => Promise<T>): Promise<T> {
-  if (callerSignal.aborted) fail("PREFLIGHT_TIMEOUT", "Preflight was aborted");
-  const controller = new AbortController();
-  const onAbort = () => controller.abort(callerSignal.reason);
-  callerSignal.addEventListener("abort", onAbort, { once: true });
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => { controller.abort(); reject(new Error("[PREFLIGHT_TIMEOUT] Preflight exceeded the Setup timeout")); }, timeoutMs);
-  });
-  const aborted = new Promise<never>((_, reject) => controller.signal.addEventListener("abort", () => reject(new Error("[PREFLIGHT_TIMEOUT] Preflight was aborted")), { once: true }));
-  try { return await Promise.race([operation(controller.signal), deadline, aborted]); }
-  finally { if (timer) clearTimeout(timer); callerSignal.removeEventListener("abort", onAbort); }
-}
+function assistantText(messages: readonly unknown[]) { for (let i = messages.length - 1; i >= 0; i--) { const m = messages[i] as { role?: unknown; content?: unknown; stopReason?: unknown }; if (m?.role !== "assistant" || !Array.isArray(m.content)) continue; const text = m.content.flatMap((block) => { if (!block || typeof block !== "object") return []; const candidate = block as { type?: unknown; text?: unknown }; return candidate.type === "text" && typeof candidate.text === "string" ? [candidate.text] : []; }).filter(Boolean).join("\n\n").trim(); return { text, stopReason: typeof m.stopReason === "string" ? m.stopReason : undefined }; } }
+function validateInput(input: { mode: string; task?: TaskSpecification; tasks?: TaskSpecification[] }): TaskSpecification[] { const tasks = input.mode === "single" ? (input.task ? [input.task] : []) : input.mode === "batch" ? (input.tasks ?? []) : []; if (input.mode === "single" && tasks.length !== 1) fail("INPUT_INVALID", "Expected one single Task specification"); if (input.mode === "batch" && (tasks.length < 2 || tasks.length > 8)) fail("BATCH_SIZE_INVALID", "batch must contain 2..8 Tasks"); if (input.mode !== "single" && input.mode !== "batch") fail("INPUT_INVALID", "mode must be single or batch"); let total = 0; for (const task of tasks) { if (task.agent !== "investigation") fail("AGENT_UNKNOWN", "Agent must be investigation"); const size = bytes(task.task); total += size; if (size < 1 || size > 16384) fail("INPUT_INVALID", "task must be 1..16384 UTF-8 bytes"); if (task.model !== undefined && (bytes(task.model) < 1 || bytes(task.model) > 256 || !/^[^/]+\/[^/]+$/.test(task.model))) fail("INPUT_INVALID", "model must be one provider/model pair of at most 256 UTF-8 bytes"); } if (total > 65536) fail("INPUT_INVALID", "batch tasks exceed 65536 UTF-8 bytes"); return tasks; }
+async function boundedPreflight<T>(ms: number, caller: AbortSignal, operation: (signal: AbortSignal) => Promise<T>) { if (caller.aborted) fail("PREFLIGHT_TIMEOUT", "Preflight was aborted"); const controller = new AbortController(); const abort = () => controller.abort(); caller.addEventListener("abort", abort, { once: true }); let timer: ReturnType<typeof setTimeout> | undefined; try { return await Promise.race([operation(controller.signal), new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("[PREFLIGHT_TIMEOUT] Preflight exceeded the Setup timeout")); }, ms); }), new Promise<never>((_, reject) => controller.signal.addEventListener("abort", () => reject(new Error("[PREFLIGHT_TIMEOUT] Preflight was aborted")), { once: true }))]); } finally { if (timer) clearTimeout(timer); caller.removeEventListener("abort", abort); } }
 
 export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: RuntimeDependencies, agentDefinition: Promise<string>, config: StartupConfig) {
-  const records = new Map<string, RecordState>();
-  let activation = Promise.resolve();
-  const updateActivation = (wanted: boolean) => activation = activation.then(() => {
-    const active = pi.getActiveTools();
-    const next = wanted ? [...new Set([...active, "delegation_control"])] : active.filter((name) => name !== "delegation_control");
-    if (next.length !== active.length || next.some((name, index) => name !== active[index])) pi.setActiveTools(next);
-  });
-
-  pi.registerTool({
-    name: "delegation_control", label: "Delegation Control",
-    description: "Inspect a live or completed Delegation, or request cancellation of the whole Delegation.",
-    parameters: Type.Object({ action: StringEnum(["inspect", "cancel"] as const), delegationId: Type.String() }, { additionalProperties: false }),
-    async execute(_id, input) {
-      const record = records.get(input.delegationId);
-      if (!record) throw new Error("[INPUT_INVALID] Unknown Delegation id");
-      if (input.action === "cancel" && record.phase !== "terminal" && record.phase !== "finalizing") await record.cancel?.();
-      if (input.action === "inspect" && record.phase === "finalizing") await record.finalize?.();
-      if (record.phase !== "terminal") return textResult({ schemaVersion: 1, delegationId: input.delegationId, phase: record.phase, children: [{ index: 0, phase: record.childPhase }], diagnostics: record.diagnostics });
-      if (record.unread) {
-        const json = compact(record.envelope);
-        pi.appendEntry("pi-subagents-minimal:consumed", { schemaVersion: 1, delegationId: input.delegationId, envelopeSha256: createHash("sha256").update(json).digest("hex"), consumedAt: dependencies.now().toISOString() });
-        record.unread = false;
-        await updateActivation([...records.values()].some((item) => item.phase !== "terminal" || item.unread));
-      }
-      return textResult({ envelope: record.envelope, diagnostics: record.diagnostics });
-    },
-  });
-
-  return async (input: { mode: "single"; task: TaskSpecification }, signal: AbortSignal, ctx: ExtensionContext) => {
-    const admitted = await boundedPreflight(config.setupTimeoutMs, signal, async (preflightSignal) => {
-      const task = validateSingleInput(input);
-      if (task.reportPath !== undefined) await validateReportPath(ctx.cwd, task.reportPath);
-      const modelName = task.model ?? (ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined);
-      if (modelName === undefined) throw new Error("[MODEL_NOT_FOUND] A provider/model is required");
-      const effectiveThinking = task.thinking ?? ctx.thinkingLevel ?? "off";
-      const modelRuntime = await dependencies.createModelRuntime(preflightSignal);
-      const [provider, id] = modelName.split("/") as [string, string];
-      const model = modelRuntime.getModel(provider, id);
-      if (model === undefined) throw new Error("[MODEL_NOT_FOUND] Model was not found");
-      const available = await modelRuntime.getAvailable(undefined, { signal: preflightSignal });
-      if (!available.some((candidate) => candidate.provider === provider && candidate.id === id)) fail("MODEL_UNAVAILABLE", "Model authentication is unavailable");
-      if ((!model.reasoning && effectiveThinking !== "off") || model.thinkingLevelMap?.[effectiveThinking] === null) fail("THINKING_UNSUPPORTED", "Thinking level is unsupported");
-      const parentSession = ctx.sessionManager as typeof ctx.sessionManager & { isPersisted?: () => boolean };
-      if (typeof parentSession.isPersisted !== "function" || !parentSession.isPersisted()) fail("PARENT_SESSION_EPHEMERAL", "Parent session must be persisted");
-      const definition = await agentDefinition;
-      const feasibilityBase = { schemaVersion: 1 as const, delegationId: "d_00000000-0000-4000-8000-000000000000", outcome: "succeeded" as const, completedAt: "9999-12-31T23:59:59.999Z", taskCount: 1, order: "input" as const };
-      const feasibilityChild: ChildOutcome = task.reportPath === undefined
-        ? { index: 0, outcome: "failed", effectiveModel: modelName, effectiveThinking, error: { stage: "projection", code: "PROJECTION_FAILED", message: "x".repeat(512) } }
-        : { index: 0, outcome: "succeeded", effectiveModel: modelName, effectiveThinking, report: { path: task.reportPath, summary: "" } };
-      if (!terminalEnvelopeFeasible(feasibilityBase, [feasibilityChild])) fail("ENVELOPE_BUDGET_EXCEEDED", "Protected Terminal envelope metadata exceeds its budget");
-      return { task, modelName, effectiveThinking, modelRuntime, model, definition };
-    });
-    const { task, modelName, effectiveThinking, modelRuntime, model, definition } = admitted;
-    const delegationId = dependencies.id();
-    const record: RecordState = { phase: "queued", childPhase: "queued", unread: false, diagnostics: [] };
-    records.set(delegationId, record);
-    await updateActivation(true);
-    void (async () => {
-      let child: ChildSession | undefined;
-      let unsubscribe: (() => void) | undefined;
-      let timer: unknown;
-      let settled = false;
-      let started = false;
-      const setTimer = dependencies.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
-      const clearTimer = dependencies.clearTimer ?? ((handle) => clearTimeout(handle as ReturnType<typeof setTimeout>));
-      const diagnostic = (code: string, message: string) => {
-        record.diagnostics.push({ stage: code.includes("DISPOSE") || code.includes("ABORT") || code.includes("CLEANUP") ? "cleanup" : "lifecycle", code, message: safeMessage(message), at: dependencies.now().toISOString() });
-        record.diagnostics = record.diagnostics.slice(-8);
-      };
-      const finish = async (outcome: ChildOutcome) => {
-        if (settled) { diagnostic("LATE_RESULT_REJECTED", "Late settlement evidence was rejected"); return; }
-        settled = true;
-        if (timer !== undefined) clearTimer(timer);
-        unsubscribe?.(); unsubscribe = undefined;
-        if (outcome.outcome !== "succeeded") void child?.abort().catch(() => diagnostic("CHILD_ABORT_FAILED", "Subagent abort failed"));
-        try { child?.dispose(); } catch { diagnostic("CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); }
-        child = undefined;
-        record.childPhase = "terminal"; record.phase = "finalizing";
-        const completedAt = dependencies.now().toISOString();
-        let candidate: TerminalEnvelope | undefined;
-        let notified = false;
-        record.finalize = async () => {
-          if (record.phase !== "finalizing") return;
-          if (candidate === undefined) {
-            try {
-              candidate = allocateTerminalEnvelope({ schemaVersion: 1, delegationId, outcome: outcome.outcome, completedAt, taskCount: 1, order: "input" }, [outcome]);
-            } catch {
-              diagnostic("TERMINAL_PROJECTION_FAILED", "Terminal envelope projection failed");
-              return;
-            }
-          }
-          try { pi.appendEntry("pi-subagents-minimal:terminal", candidate); }
-          catch { record.diagnostics.push({ stage: "persistence", code: "TERMINAL_PERSIST_FAILED", message: "Terminal envelope persistence failed", at: dependencies.now().toISOString() }); return; }
-          record.envelope = candidate; record.phase = "terminal"; record.unread = true;
-          await updateActivation(true);
-          if (!notified) {
-            notified = true;
-            try { pi.sendMessage({ customType: "pi-subagents-minimal:completion", content: `Delegation ${delegationId} completed: ${candidate.outcome}. Use delegation_control inspect to retrieve it.`, display: true }, { deliverAs: "steer", triggerTurn: true }); }
-            catch { diagnostic("COMPLETION_NOTIFY_FAILED", "Completion notification failed"); }
-          }
-        };
-        await record.finalize();
-      };
-      const base = (outcome: ChildOutcome["outcome"]): ChildOutcome => ({ index: 0, outcome, effectiveModel: modelName, effectiveThinking });
-      const partial = () => assistantText(child?.messages ?? [])?.text || undefined;
-      const failure = (stage: ChildError["stage"], code: string, message: string, outcome: "failed" | "timed_out" = "failed"): ChildOutcome => {
-        const value = base(outcome); value.error = { stage, code, message: safeMessage(message) }; const text = partial(); if (text) value.partialResult = text; return value;
-      };
-      record.cancel = async () => {
-        if (settled) return;
-        record.phase = "cancelling";
-        await finish({ ...base("cancelled"), error: { stage: started ? "run" : "setup", code: "CANCELLED", message: "Delegation was cancelled" } });
-      };
-      try {
-        const reportState: ReportState = { written: false, failed: false };
-        const customTools = task.reportPath === undefined ? undefined : [createReportWriter(ctx.cwd, task.reportPath, reportState, diagnostic)];
-        record.childPhase = "setup";
-        timer = setTimer(() => void finish(failure("setup", "SETUP_TIMEOUT", "Setup deadline expired", "timed_out")), config.setupTimeoutMs);
-        try { child = await dependencies.createChild({ cwd: ctx.cwd, task: task.task, model, thinking: effectiveThinking, agentDefinition: definition, customTools }, modelRuntime); }
-        catch (error) { const code = error instanceof ChildSetupError ? error.code : "SESSION_CREATE_FAILED"; await finish(failure("setup", code, code === "RESOURCE_LOAD_FAILED" ? "Subagent resources failed to load" : "Subagent session creation failed")); return; }
-        const boundary = child.messages.length;
-        unsubscribe = child.subscribe((event) => {
-          if (!started && !settled && event.type === "agent_start") {
-            started = true; clearTimer(timer); record.phase = "running"; record.childPhase = "running";
-            timer = setTimer(() => void finish(failure("run", "RUN_TIMEOUT", "Running deadline expired", "timed_out")), config.runTimeoutMs);
-          }
-        });
-        try { await child.prompt(task.task, { expandPromptTemplates: false }); }
-        catch { await finish(failure(started ? "run" : "setup", started ? "RUN_FAILED" : "PROMPT_REJECTED", started ? "Subagent run failed" : "Prompt was rejected")); return; }
-        if (settled) return;
-        if (!started) { await finish(failure("setup", "PROMPT_REJECTED", "Prompt resolved before the Subagent started")); return; }
-        let answer: ReturnType<typeof assistantText>;
-        try { answer = assistantText(child.messages.slice(boundary)); } catch { await finish(failure("projection", "PROJECTION_FAILED", "Subagent output projection failed")); return; }
-        if (!answer?.text || !answer.stopReason || answer.stopReason === "toolUse") { await finish(failure("projection", "OUTPUT_MISSING", "Subagent produced no usable output")); return; }
-        if (answer.stopReason === "length") { await finish(failure("run", "OUTPUT_LENGTH", "Subagent output reached its length limit")); return; }
-        if (answer.stopReason !== "stop") { await finish(failure("run", "RUN_FAILED", "Subagent run did not complete successfully")); return; }
-        if (task.reportPath !== undefined) {
-          if (!reportState.written || !await verifyReport(ctx.cwd, task.reportPath)) {
-            await finish(failure(reportState.failed ? "run" : "projection", reportState.failed ? "REPORT_WRITE_FAILED" : "REPORT_MISSING", reportState.failed ? "The declared report write failed" : "The declared report is missing or unsafe")); return;
-          }
-          const success: ChildOutcome = { ...base("succeeded"), report: { path: task.reportPath, summary: answer.text } };
-          await finish(success); return;
-        }
-        const success: ChildOutcome = { ...base("succeeded"), result: answer.text };
-        await finish(success);
-      } finally {
-        unsubscribe?.();
-        try { child?.dispose(); } catch { diagnostic("CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); }
-        child = undefined; unsubscribe = undefined; record.cancel = undefined;
-      }
-    })();
-    return textResult({ schemaVersion: 1, delegationId, phase: "queued", taskCount: 1 });
+  const records = new Map<string, RecordState>(); const queue: Array<{ record: RecordState; child: ChildState; cwd: string; runtime: ModelRuntime; definition: string; id: string }> = []; let occupied = 0; let activation = Promise.resolve();
+  const setTimer = dependencies.setTimer ?? ((fn, ms) => setTimeout(fn, ms)); const clearTimer = dependencies.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>));
+  const updateActivation = (wanted: boolean) => activation = activation.then(() => { const active = pi.getActiveTools(); const next = wanted ? [...new Set([...active, "delegation_control"])] : active.filter((x) => x !== "delegation_control"); if (compact(next) !== compact(active)) pi.setActiveTools(next); });
+  const diagnostic = (record: RecordState, code: string, message: string) => { record.diagnostics.push({ stage: /DISPOSE|ABORT|CLEANUP/.test(code) ? "cleanup" : "lifecycle", code, message: safeMessage(message), at: dependencies.now().toISOString() }); record.diagnostics = record.diagnostics.slice(-8); };
+  const aggregate = (record: RecordState): TerminalEnvelope["outcome"] => { const outcomes = record.children.map((c) => c.outcome!.outcome); if (record.cancellationAccepted) return "cancelled"; if (outcomes.every((x) => x === "succeeded")) return "succeeded"; if (outcomes.includes("succeeded")) return "partial"; if (outcomes.every((x) => x === "timed_out")) return "timed_out"; return "failed"; };
+  const maybeFinalize = async (id: string, record: RecordState) => { if (!record.children.every((c) => c.outcome)) return; record.phase = "finalizing"; const completedAt = dependencies.now().toISOString(); let candidate: TerminalEnvelope | undefined; let notified = false; record.finalize = async () => { if (record.phase !== "finalizing") return; try { candidate ??= allocateTerminalEnvelope({ schemaVersion: 1, delegationId: id, outcome: aggregate(record), completedAt, taskCount: record.children.length, order: "input" }, record.children.map((c) => c.outcome!)); } catch { diagnostic(record, "TERMINAL_PROJECTION_FAILED", "Terminal envelope projection failed"); return; } try { pi.appendEntry("pi-subagents-minimal:terminal", candidate); } catch { record.diagnostics.push({ stage: "persistence", code: "TERMINAL_PERSIST_FAILED", message: "Terminal envelope persistence failed", at: dependencies.now().toISOString() }); return; } record.envelope = candidate; record.phase = "terminal"; record.unread = true; await updateActivation(true); if (!notified) { notified = true; try { pi.sendMessage({ customType: "pi-subagents-minimal:completion", content: `Delegation ${id} completed: ${candidate.outcome}. Use delegation_control inspect to retrieve it.`, display: true }, { deliverAs: "steer", triggerTurn: true }); } catch { diagnostic(record, "COMPLETION_NOTIFY_FAILED", "Completion notification failed"); } } }; await record.finalize(); };
+  const settle = async (id: string, record: RecordState, child: ChildState, outcome: ChildOutcome) => { if (child.outcome) { diagnostic(record, "LATE_RESULT_REJECTED", "Late settlement evidence was rejected"); return false; } child.outcome = outcome; child.phase = "terminal"; await maybeFinalize(id, record); return true; };
+  const pump = () => { while (occupied < config.concurrency && queue.length) { const item = queue.shift()!; if (item.child.outcome) continue; if (item.child.queueTimer !== undefined) clearTimer(item.child.queueTimer); occupied++; void run(item).finally(() => { occupied--; pump(); }); } };
+  const run = async ({ record, child: state, cwd, runtime, definition, id }: typeof queue[number]) => { const { task, modelName, thinking, model } = state.resolved; let child: ChildSession | undefined; let unsubscribe: (() => void) | undefined; let timer: unknown; let started = false; const base = (outcome: ChildOutcome["outcome"]): ChildOutcome => ({ index: state.index, outcome, effectiveModel: modelName, effectiveThinking: thinking }); const partial = () => assistantText(child?.messages ?? [])?.text || undefined; const failure = (stage: ChildError["stage"], code: string, message: string, outcome: "failed" | "timed_out" = "failed") => { const value = { ...base(outcome), error: { stage, code, message: safeMessage(message) } } as ChildOutcome; const text = partial(); if (text) value.partialResult = text; return value; }; const finish = async (outcome: ChildOutcome) => { if (state.outcome || state.settling) { diagnostic(record, "LATE_RESULT_REJECTED", "Late settlement evidence was rejected"); return; } state.settling = true; if (timer !== undefined) clearTimer(timer); unsubscribe?.(); unsubscribe = undefined; if (outcome.outcome !== "succeeded") void child?.abort().catch(() => diagnostic(record, "CHILD_ABORT_FAILED", "Subagent abort failed")); try { child?.dispose(); } catch { diagnostic(record, "CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); } child = undefined; await settle(id, record, state, outcome); };
+    state.cancel = async () => finish({ ...base("cancelled"), error: { stage: started ? "run" : "setup", code: "CANCELLED", message: "Delegation was cancelled" } });
+    try { const reportState: ReportState = { written: false, failed: false }; const customTools = task.reportPath === undefined ? undefined : [createReportWriter(cwd, task.reportPath, reportState, (c, m) => diagnostic(record, c, m))]; state.phase = "setup"; timer = setTimer(() => void finish(failure("setup", "SETUP_TIMEOUT", "Setup deadline expired", "timed_out")), config.setupTimeoutMs); try { child = await dependencies.createChild({ cwd, task: task.task, model, thinking, agentDefinition: definition, customTools }, runtime); } catch (error) { const code = error instanceof ChildSetupError ? error.code : "SESSION_CREATE_FAILED"; await finish(failure("setup", code, code === "RESOURCE_LOAD_FAILED" ? "Subagent resources failed to load" : "Subagent session creation failed")); return; } const boundary = child.messages.length; unsubscribe = child.subscribe((event) => { if (!started && !state.outcome && event.type === "agent_start") { started = true; clearTimer(timer); if (record.phase === "queued") record.phase = "running"; state.phase = "running"; timer = setTimer(() => void finish(failure("run", "RUN_TIMEOUT", "Running deadline expired", "timed_out")), config.runTimeoutMs); } }); try { await child.prompt(task.task, { expandPromptTemplates: false }); } catch { await finish(failure(started ? "run" : "setup", started ? "RUN_FAILED" : "PROMPT_REJECTED", started ? "Subagent run failed" : "Prompt was rejected")); return; } if (state.outcome) return; if (!started) { await finish(failure("setup", "PROMPT_REJECTED", "Prompt resolved before the Subagent started")); return; } const answer = assistantText(child.messages.slice(boundary)); if (!answer?.text || !answer.stopReason || answer.stopReason === "toolUse") { await finish(failure("projection", "OUTPUT_MISSING", "Subagent produced no usable output")); return; } if (answer.stopReason === "length") { await finish(failure("run", "OUTPUT_LENGTH", "Subagent output reached its length limit")); return; } if (answer.stopReason !== "stop") { await finish(failure("run", "RUN_FAILED", "Subagent run did not complete successfully")); return; } if (task.reportPath !== undefined) { if (!reportState.written || !await verifyReport(cwd, task.reportPath)) { await finish(failure(reportState.failed ? "run" : "projection", reportState.failed ? "REPORT_WRITE_FAILED" : "REPORT_MISSING", reportState.failed ? "The declared report write failed" : "The declared report is missing or unsafe")); return; } await finish({ ...base("succeeded"), report: { path: task.reportPath, summary: answer.text } }); } else await finish({ ...base("succeeded"), result: answer.text });
+    } finally { unsubscribe?.(); try { child?.dispose(); } catch { diagnostic(record, "CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); } child = undefined; state.cancel = undefined; }
+  };
+  pi.registerTool({ name: "delegation_control", label: "Delegation Control", description: "Inspect a live or completed Delegation, or request cancellation of the whole Delegation.", parameters: Type.Object({ action: StringEnum(["inspect", "cancel"] as const), delegationId: Type.String() }, { additionalProperties: false }), async execute(_id, input) { const record = records.get(input.delegationId); if (!record) throw new Error("[INPUT_INVALID] Unknown Delegation id"); if (input.action === "cancel" && record.phase !== "terminal" && record.phase !== "finalizing") await record.cancel?.(); if (input.action === "inspect" && record.phase === "finalizing") await record.finalize?.(); if (record.phase !== "terminal") return textResult({ schemaVersion: 1, delegationId: input.delegationId, phase: record.phase, children: record.children.map((c) => ({ index: c.index, phase: c.phase })), diagnostics: record.diagnostics }); if (record.unread) { const json = compact(record.envelope); pi.appendEntry("pi-subagents-minimal:consumed", { schemaVersion: 1, delegationId: input.delegationId, envelopeSha256: createHash("sha256").update(json).digest("hex"), consumedAt: dependencies.now().toISOString() }); record.unread = false; await updateActivation([...records.values()].some((r) => r.phase !== "terminal" || r.unread)); } return textResult({ envelope: record.envelope, diagnostics: record.diagnostics }); } });
+  return async (input: { mode: "single" | "batch"; task?: TaskSpecification; tasks?: TaskSpecification[] }, signal: AbortSignal, ctx: ExtensionContext) => { const admitted = await boundedPreflight(config.setupTimeoutMs, signal, async (preflightSignal) => { const tasks = validateInput(input); const paths = new Set<string>(); for (const task of tasks) if (task.reportPath !== undefined) { const validated = await validateReportPath(ctx.cwd, task.reportPath); if (paths.has(validated.target)) fail("REPORT_PATH_CONFLICT", "Duplicate normalized reportPath"); paths.add(validated.target); } const runtime = await dependencies.createModelRuntime(preflightSignal); const available = await runtime.getAvailable(undefined, { signal: preflightSignal }); const resolved: ResolvedTask[] = tasks.map((task) => { const modelName = task.model ?? (ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : ""); if (!modelName) fail("MODEL_NOT_FOUND", "A provider/model is required"); const [provider, modelId] = modelName.split("/") as [string, string]; const foundModel = runtime.getModel(provider, modelId); if (!foundModel) fail("MODEL_NOT_FOUND", "Model was not found"); const model = foundModel as Model<Api>; if (!available.some((m) => m.provider === provider && m.id === modelId)) fail("MODEL_UNAVAILABLE", "Model authentication is unavailable"); const thinking = task.thinking ?? ctx.thinkingLevel ?? "off"; if ((!model.reasoning && thinking !== "off") || model.thinkingLevelMap?.[thinking] === null) fail("THINKING_UNSUPPORTED", "Thinking level is unsupported"); return { task, modelName, thinking, model }; }); const parent = ctx.sessionManager as typeof ctx.sessionManager & { isPersisted?: () => boolean }; if (typeof parent.isPersisted !== "function" || !parent.isPersisted()) fail("PARENT_SESSION_EPHEMERAL", "Parent session must be persisted"); const definition = await agentDefinition; const sample = resolved.map((r, index): ChildOutcome => r.task.reportPath ? { index, outcome: "succeeded", effectiveModel: r.modelName, effectiveThinking: r.thinking, report: { path: r.task.reportPath, summary: "" } } : { index, outcome: "failed", effectiveModel: r.modelName, effectiveThinking: r.thinking, error: { stage: "projection", code: "PROJECTION_FAILED", message: "x".repeat(512) } }); if (!terminalEnvelopeFeasible({ schemaVersion: 1, delegationId: "d_00000000-0000-4000-8000-000000000000", outcome: "failed", completedAt: "9999-12-31T23:59:59.999Z", taskCount: tasks.length, order: "input" }, sample)) fail("ENVELOPE_BUDGET_EXCEEDED", "Protected Terminal envelope metadata exceeds its budget"); return { resolved, runtime, definition }; });
+    const id = dependencies.id(); const record: RecordState = { phase: "queued", children: admitted.resolved.map((resolved, index) => ({ index, phase: "queued", resolved })), unread: false, diagnostics: [], cancellationAccepted: false }; records.set(id, record); record.cancel = async () => { if (record.phase === "terminal" || record.phase === "finalizing" || record.cancellationAccepted) return; record.cancellationAccepted = true; record.phase = "cancelling"; await Promise.all(record.children.map(async (child) => child.phase === "queued" ? settle(id, record, child, { index: child.index, outcome: "cancelled", effectiveModel: child.resolved.modelName, effectiveThinking: child.resolved.thinking, error: { stage: "queue", code: "CANCELLED", message: "Delegation was cancelled" } }) : child.cancel?.())); pump(); }; const registered = dependencies.monotonicNow?.() ?? Date.now(); for (const child of record.children) { const item = { record, child, cwd: ctx.cwd, runtime: admitted.runtime, definition: admitted.definition, id }; queue.push(item); child.queueTimer = setTimer(() => { const elapsed = (dependencies.monotonicNow?.() ?? Date.now()) - registered; if (child.phase === "queued" && elapsed >= config.queueTimeoutMs) void settle(id, record, child, { index: child.index, outcome: "timed_out", effectiveModel: child.resolved.modelName, effectiveThinking: child.resolved.thinking, error: { stage: "queue", code: "QUEUE_TIMEOUT", message: "Queue deadline expired" } }).then(pump); }, config.queueTimeoutMs); } await updateActivation(true); pump(); return textResult({ schemaVersion: 1, delegationId: id, phase: "queued", taskCount: record.children.length });
   };
 }
