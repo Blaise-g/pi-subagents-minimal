@@ -2,6 +2,7 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import { VERSION, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { readStartupConfig, type StartupConfig } from "./config.ts";
+import { defaultRuntimeDependencies, installSuccessfulSingleRuntime, type RuntimeDependencies } from "./runtime.ts";
 
 const PI_RANGE = ">=0.84.3 <0.85.0";
 const NODE_MINIMUM = [22, 19, 0] as const;
@@ -26,6 +27,7 @@ export interface ExtensionDependencies {
   env: Readonly<Record<string, string | undefined>>;
   writeStderr(message: string): void;
   startRuntime?(config: StartupConfig): void;
+  runtime: RuntimeDependencies;
 }
 
 function parseStableVersion(version: string): [number, number, number] | undefined {
@@ -55,6 +57,7 @@ export function createExtension(overrides: Partial<ExtensionDependencies> = {}) 
     nodeVersion: process.versions.node,
     env: process.env,
     writeStderr: (message) => process.stderr.write(message),
+    runtime: defaultRuntimeDependencies,
     ...overrides,
   };
 
@@ -68,14 +71,19 @@ export function createExtension(overrides: Partial<ExtensionDependencies> = {}) 
     let runtimeStarted = false;
     const configError = configuration.ok ? undefined : `[CONFIG_INVALID] ${configuration.message}`;
 
+    const agentDefinition = dependencies.runtime.loadAgent();
+    const executeDelegation = configuration.ok
+      ? installSuccessfulSingleRuntime(pi, dependencies.runtime, agentDefinition)
+      : undefined;
+
     pi.registerTool({
       name: "delegate",
       label: "Delegate",
       description: "Start one isolated Investigation or a flat batch of independent Investigations in the background. Returns a Delegation id; use delegation_control to inspect or cancel.",
       parameters: delegateParameters,
-      async execute() {
+      async execute(_toolCallId, input, signal, _onUpdate, ctx) {
         if (configError !== undefined) throw new Error(configError);
-        throw new Error("[INPUT_INVALID] Delegation runtime is not implemented yet");
+        return executeDelegation!(input as never, signal ?? new AbortController().signal, ctx);
       },
     });
 

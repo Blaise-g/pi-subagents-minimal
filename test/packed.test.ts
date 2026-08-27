@@ -24,5 +24,5 @@ test("packed artifact is allowlisted and loads through Pi", async () => {
   await $`tar -xzf ${join(destination, filename)} -C ${unpacked}`;
   expect(await readdir(join(unpacked, "package"))).toContain("package.json");
   const loaded = await loadExtensionHarness(join(unpacked, "package", "src", "index.ts"));
-  expect([...loaded.extension.tools.keys()]).toEqual(["delegate"]);
+  expect([...loaded.extension.tools.keys()]).toEqual(["delegation_control", "delegate"]);
 });
