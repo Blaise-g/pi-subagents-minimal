@@ -1,0 +1,68 @@
+name: qualification
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install
+      - run: bun run typecheck
+      - run: bun test
+
+  packed-platform:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        node: [22.19.0, 24.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ matrix.node }}" }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install
+      - run: bun test test/packed.test.ts
+      - name: Generate package digest
+        shell: bash
+        run: |
+          npm pack --json > pack.json
+          node -e "const fs=require('fs'),c=require('crypto'),p=JSON.parse(fs.readFileSync('pack.json')); const r=Array.isArray(p)?p[0]:Object.values(p)[0]; console.log(c.createHash('sha256').update(fs.readFileSync(r.filename)).digest('hex'))" > package.sha256
+          grep -E '^[0-9a-f]{64}$' package.sha256
+
+  packed-pi:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pi: [0.84.3, latest-0.84]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22.19.0 }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - name: Select supported Pi
+        shell: bash
+        run: |
+          if [ '${{ matrix.pi }}' = latest-0.84 ]; then
+            PI_VERSION=$(npm view @earendil-works/pi-coding-agent versions --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).filter(v=>/^0\\.84\\.\\d+$/.test(v)).at(-1)))")
+          else PI_VERSION='${{ matrix.pi }}'; fi
+          echo "PI_VERSION=$PI_VERSION" >> "$GITHUB_ENV"
+      - run: npm install --no-save --ignore-scripts @earendil-works/pi-ai@${PI_VERSION} @earendil-works/pi-coding-agent@${PI_VERSION} typebox@1.3.7 typescript@5.9.3 @types/node@22.19.19 @types/bun@1.3.10
+      - run: bun test test/packed.test.ts
+      - run: bun run typecheck
+      - name: Fresh tarball installation
+        shell: bash
+        run: |
+          TARBALL=$(npm pack --silent)
+          mkdir fresh && cd fresh
+          npm init -y >/dev/null
+          npm install --ignore-scripts --save-exact ../"$TARBALL" @earendil-works/pi-coding-agent@"$PI_VERSION"
+          node -e "const p=require('./node_modules/pi-subagents-minimal/package.json'); if(p.version!=='1.0.0'||p.pi.extensions.length!==1) process.exit(1)"
