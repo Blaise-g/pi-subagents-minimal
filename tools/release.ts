@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -108,7 +107,6 @@ export interface ReleaseRecordInput {
   commit: string;
   tag: string;
   tarballSha256: string;
-  behavioralBattery: { records: string; sha256: string; trials: number; children: number };
   qualifications: QualificationRecord[];
   workflow: { repository: string; runId: string; runAttempt: string };
 }
@@ -119,8 +117,7 @@ export function buildReleaseRecord(input: ReleaseRecordInput) {
     package: { name: "pi-subagents-minimal", version: input.packageVersion },
     source: { commit: input.commit, tag: input.tag },
     tarball: { sha256: input.tarballSha256 },
-    qualifications: [...input.qualifications].sort((a, b) => `${a.platform}\0${a.piVersion}\0${a.nodeVersion}`.localeCompare(`${b.platform}\0${b.piVersion}\0${b.nodeVersion}`)),
-    behavioralBattery: input.behavioralBattery,
+    qualifications: [...input.qualifications].sort((a, b) => `${a.platform}\0${a.piVersion}\0${a.nodeVersion}\0${a.bunVersion}`.localeCompare(`${b.platform}\0${b.piVersion}\0${b.nodeVersion}\0${b.bunVersion}`)),
     workflow: input.workflow,
   };
 }
@@ -140,20 +137,11 @@ async function createRecord(metadataDirectory: string, output: string): Promise<
     const value = JSON.parse(await readFile(resolve(metadataDirectory, name), "utf8")) as QualificationRecord;
     qualifications.push(value);
   }
-  const batteryPath = process.env.RELEASE_BATTERY_RECORDS!;
-  const battery = await readFile(batteryPath);
-  const trials = JSON.parse(battery.toString("utf8")) as Array<{ children: number }>;
   const record = buildReleaseRecord({
     packageVersion: process.env.RELEASE_PACKAGE_VERSION!,
     commit: process.env.RELEASE_COMMIT!,
     tag: process.env.RELEASE_TAG!,
     tarballSha256: process.env.RELEASE_TARBALL_SHA256!,
-    behavioralBattery: {
-      records: batteryPath,
-      sha256: createHash("sha256").update(battery).digest("hex"),
-      trials: trials.length,
-      children: trials.reduce((total, trial) => total + trial.children, 0),
-    },
     qualifications,
     workflow: { repository: process.env.GITHUB_REPOSITORY!, runId: process.env.GITHUB_RUN_ID!, runAttempt: process.env.GITHUB_RUN_ATTEMPT! },
   });
