@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { buildPlan, type TrialPlan } from "../tools/behavioral-battery.ts";
 import { deterministicErrors, finalizeRecords } from "../tools/behavioral-runner.ts";
+import { observeChild } from "../tools/behavioral-observer-extension.ts";
 
 const manifest = JSON.parse(readFileSync(new URL("./behavioral/fixtures/manifest.json", import.meta.url), "utf8"));
 const oracles = JSON.parse(readFileSync(new URL("./behavioral/oracles/v1.json", import.meta.url), "utf8"));
@@ -30,6 +31,21 @@ function execution(trial: TrialPlan, answer: string, taskOverrides: Record<strin
 }
 
 describe("provider-backed Behavioral runner", () => {
+  test("observes through the runtime subscription without adding a second child subscriber", () => {
+    let subscriptions = 0;
+    const child = {
+      messages: [], prompt: async () => {}, dispose: () => {}, abort: async () => {},
+      subscribe(listener: (event: { type: string }) => void) { subscriptions++; listener({ type: "agent_start" }); return () => {}; },
+    };
+    const sink: any[] = [];
+    const observed = observeChild(child, 2, sink);
+    let forwarded = "";
+    observed.subscribe((event) => { forwarded = event.type; });
+    expect(subscriptions).toBe(1);
+    expect(forwarded).toBe("agent_start");
+    expect(sink).toEqual([{ batterySource: "child", childIndex: 2, event: { type: "agent_start" } }]);
+  });
+
   test("deterministically accepts a read-only bounded exploration workflow", () => {
     const trial = plan.find(({ id }) => id === "exploration--low--1")!;
     const { events, envelope } = execution(trial, "`resource-loader.js` `DefaultResourceLoader.loadSkills()` calls `mergePaths`; discovered paths precede additional paths.");
