@@ -1,0 +1,706 @@
+{
+  "schemaVersion": 1,
+  "evidenceCatalog": {
+    "agent-bytes": {
+      "kind": "deterministic",
+      "file": "test/extension.test.ts",
+      "assertion": "packaged Investigation bytes equal the approved fixture"
+    },
+    "allocation-invariance": {
+      "kind": "deterministic",
+      "file": "test/projection.test.ts",
+      "assertion": "allocation is permutation-independent and protects complete report paths"
+    },
+    "behavioral-matrix": {
+      "kind": "behavioral",
+      "file": "test/behavioral-battery.test.ts",
+      "assertion": "freezes 36 trials and 63 child sessions across exact tuples"
+    },
+    "behavioral-policy": {
+      "kind": "behavioral",
+      "file": "test/behavioral-battery.test.ts",
+      "assertion": "rejects missing, altered, failed, and substituted trial evidence"
+    },
+    "branch-semantics": {
+      "kind": "deterministic",
+      "file": "test/recovery.test.ts",
+      "assertion": "branch switching rebuilds only from the new active branch"
+    },
+    "cancellation": {
+      "kind": "deterministic",
+      "file": "test/cancellation.test.ts",
+      "assertion": "cancellation is shared-deadline bounded, idempotent, and preserves completed siblings"
+    },
+    "canonical-allocation": {
+      "kind": "deterministic",
+      "file": "test/projection.test.ts",
+      "assertion": "canonical allocator matches an independent Unicode waterline model"
+    },
+    "configuration": {
+      "kind": "deterministic",
+      "file": "test/config.test.ts",
+      "assertion": "startup configuration"
+    },
+    "consumption-marker": {
+      "kind": "deterministic",
+      "file": "test/recovery.test.ts",
+      "assertion": "marker failure leaves unread and permits byte-identical duplicate delivery"
+    },
+    "context-payload-budget": {
+      "kind": "budget",
+      "file": "test/context-budget.test.ts",
+      "assertion": "tool surfaces stay under ceilings and within 10% of reviewed baselines"
+    },
+    "context-token-budget": {
+      "kind": "budget",
+      "file": "test/context-budget.test.ts",
+      "assertion": "both provider repetitions independently satisfy the token ceiling"
+    },
+    "diagnostic-bounds": {
+      "kind": "deterministic",
+      "file": "test/finalization-faults.test.ts",
+      "assertion": "diagnostics are UTF-8 bounded, deterministically deduplicated, and newest eight are retained"
+    },
+    "evidence-inventory": {
+      "kind": "release",
+      "file": "test/release.test.ts",
+      "assertion": "the assertion inventory covers every contract section and change-to-evidence assertion"
+    },
+    "fifo": {
+      "kind": "deterministic",
+      "file": "test/batch.test.ts",
+      "assertion": "one extension-wide FIFO spans Delegations and never exceeds capacity"
+    },
+    "finalization-faults": {
+      "kind": "deterministic",
+      "file": "test/finalization-faults.test.ts",
+      "assertion": "projection and append faults remain finalizing and inspect retries immutable work in order"
+    },
+    "flat-batch": {
+      "kind": "deterministic",
+      "file": "test/batch.test.ts",
+      "assertion": "flat batch is all-settled and returns input order after reverse completion"
+    },
+    "host-compatibility": {
+      "kind": "deterministic",
+      "file": "test/extension.test.ts",
+      "assertion": "host compatibility"
+    },
+    "malformed-persistence": {
+      "kind": "deterministic",
+      "file": "test/recovery.test.ts",
+      "assertion": "applies matching markers in order and reports malformed and mismatched entries"
+    },
+    "notification-fault": {
+      "kind": "deterministic",
+      "file": "test/finalization-faults.test.ts",
+      "assertion": "notification and activation faults leave persisted result terminal and notification is not retried"
+    },
+    "output-length": {
+      "kind": "deterministic",
+      "file": "test/unsuccessful-single.test.ts",
+      "assertion": "output length is a run failure, not success"
+    },
+    "packed-artifact": {
+      "kind": "packed",
+      "file": "test/packed.test.ts",
+      "assertion": "exact packed artifact is allowlisted and self-describing"
+    },
+    "parent-surface": {
+      "kind": "budget",
+      "file": "test/context-budget.test.ts",
+      "assertion": "tools and parent prompt contain no package instructions"
+    },
+    "preflight": {
+      "kind": "deterministic",
+      "file": "test/preflight.test.ts",
+      "assertion": "single Delegation preflight"
+    },
+    "queue-timeout": {
+      "kind": "deterministic",
+      "file": "test/batch.test.ts",
+      "assertion": "queue timeout settles only the waiting child and does not cancel its sibling"
+    },
+    "recovery": {
+      "kind": "deterministic",
+      "file": "test/recovery.test.ts",
+      "assertion": "reconstructs unread active-branch envelopes without replaying notification"
+    },
+    "release-workflow": {
+      "kind": "release",
+      "file": "test/release.test.ts",
+      "assertion": "the publish workflow makes provenance publication depend on every release gate"
+    },
+    "report-boundary": {
+      "kind": "deterministic",
+      "file": "test/report.test.ts",
+      "assertion": "declared report boundary"
+    },
+    "report-runtime": {
+      "kind": "deterministic",
+      "file": "test/report-runtime.test.ts",
+      "assertion": "gives a report Investigation only its closure-bound writer and projects path plus summary"
+    },
+    "running-timeout": {
+      "kind": "deterministic",
+      "file": "test/unsuccessful-single.test.ts",
+      "assertion": "a running timeout wins atomically and retains bounded useful text"
+    },
+    "shutdown": {
+      "kind": "deterministic",
+      "file": "test/shutdown.test.ts",
+      "assertion": "shutdown uses one grace deadline, rejects admission, persists cancellation, and preserves unread work"
+    },
+    "successful-lifecycle": {
+      "kind": "deterministic",
+      "file": "test/successful-single.test.ts",
+      "assertion": "runs an isolated Investigation and persists before notifying and consuming"
+    },
+    "typecheck": {
+      "kind": "typecheck",
+      "file": "package.json",
+      "assertion": "\"typecheck\": \"tsc --noEmit\""
+    },
+    "unknown-id": {
+      "kind": "deterministic",
+      "file": "test/cancellation.test.ts",
+      "assertion": "unknown Delegation ids return a sanitized error"
+    }
+  },
+  "contractSections": [
+    {
+      "section": "1",
+      "evidence": [
+        "parent-surface",
+        "report-runtime"
+      ]
+    },
+    {
+      "section": "2",
+      "evidence": [
+        "packed-artifact",
+        "host-compatibility",
+        "release-workflow"
+      ]
+    },
+    {
+      "section": "2.1",
+      "evidence": [
+        "packed-artifact"
+      ]
+    },
+    {
+      "section": "2.2",
+      "evidence": [
+        "host-compatibility",
+        "release-workflow"
+      ]
+    },
+    {
+      "section": "2.3",
+      "evidence": [
+        "packed-artifact",
+        "recovery"
+      ]
+    },
+    {
+      "section": "3",
+      "evidence": [
+        "parent-surface"
+      ]
+    },
+    {
+      "section": "3.1",
+      "evidence": [
+        "successful-lifecycle",
+        "preflight"
+      ]
+    },
+    {
+      "section": "3.2",
+      "evidence": [
+        "unknown-id",
+        "consumption-marker"
+      ]
+    },
+    {
+      "section": "3.3",
+      "evidence": [
+        "successful-lifecycle",
+        "consumption-marker"
+      ]
+    },
+    {
+      "section": "4",
+      "evidence": [
+        "configuration"
+      ]
+    },
+    {
+      "section": "5",
+      "evidence": [
+        "preflight"
+      ]
+    },
+    {
+      "section": "6",
+      "evidence": [
+        "report-boundary"
+      ]
+    },
+    {
+      "section": "6.1",
+      "evidence": [
+        "report-boundary"
+      ]
+    },
+    {
+      "section": "6.2",
+      "evidence": [
+        "report-boundary",
+        "report-runtime"
+      ]
+    },
+    {
+      "section": "7",
+      "evidence": [
+        "successful-lifecycle",
+        "report-runtime"
+      ]
+    },
+    {
+      "section": "7.1",
+      "evidence": [
+        "agent-bytes"
+      ]
+    },
+    {
+      "section": "8",
+      "evidence": [
+        "flat-batch",
+        "cancellation"
+      ]
+    },
+    {
+      "section": "8.1",
+      "evidence": [
+        "fifo",
+        "queue-timeout",
+        "running-timeout"
+      ]
+    },
+    {
+      "section": "8.2",
+      "evidence": [
+        "cancellation",
+        "finalization-faults"
+      ]
+    },
+    {
+      "section": "8.3",
+      "evidence": [
+        "successful-lifecycle",
+        "cancellation"
+      ]
+    },
+    {
+      "section": "8.4",
+      "evidence": [
+        "flat-batch"
+      ]
+    },
+    {
+      "section": "8.5",
+      "evidence": [
+        "cancellation"
+      ]
+    },
+    {
+      "section": "9",
+      "evidence": [
+        "canonical-allocation"
+      ]
+    },
+    {
+      "section": "9.1",
+      "evidence": [
+        "running-timeout",
+        "output-length",
+        "report-runtime"
+      ]
+    },
+    {
+      "section": "9.2",
+      "evidence": [
+        "running-timeout",
+        "output-length"
+      ]
+    },
+    {
+      "section": "9.3",
+      "evidence": [
+        "successful-lifecycle",
+        "flat-batch"
+      ]
+    },
+    {
+      "section": "9.4",
+      "evidence": [
+        "canonical-allocation",
+        "allocation-invariance"
+      ]
+    },
+    {
+      "section": "10",
+      "evidence": [
+        "diagnostic-bounds"
+      ]
+    },
+    {
+      "section": "11",
+      "evidence": [
+        "successful-lifecycle",
+        "recovery"
+      ]
+    },
+    {
+      "section": "11.1",
+      "evidence": [
+        "successful-lifecycle",
+        "finalization-faults"
+      ]
+    },
+    {
+      "section": "11.2",
+      "evidence": [
+        "successful-lifecycle",
+        "notification-fault"
+      ]
+    },
+    {
+      "section": "11.3",
+      "evidence": [
+        "consumption-marker"
+      ]
+    },
+    {
+      "section": "11.4",
+      "evidence": [
+        "recovery",
+        "branch-semantics",
+        "malformed-persistence"
+      ]
+    },
+    {
+      "section": "12",
+      "evidence": [
+        "shutdown"
+      ]
+    },
+    {
+      "section": "13",
+      "evidence": [
+        "context-payload-budget",
+        "context-token-budget"
+      ]
+    },
+    {
+      "section": "14",
+      "evidence": [
+        "evidence-inventory",
+        "release-workflow"
+      ]
+    },
+    {
+      "section": "14.1",
+      "evidence": [
+        "flat-batch",
+        "recovery",
+        "cancellation",
+        "finalization-faults",
+        "shutdown"
+      ]
+    },
+    {
+      "section": "14.2",
+      "evidence": [
+        "behavioral-matrix",
+        "behavioral-policy"
+      ]
+    },
+    {
+      "section": "14.3",
+      "evidence": [
+        "release-workflow",
+        "packed-artifact",
+        "context-payload-budget"
+      ]
+    },
+    {
+      "section": "15",
+      "evidence": [
+        "evidence-inventory"
+      ]
+    }
+  ],
+  "lifecycleConformance": [
+    {
+      "case": "Out-of-order Flat batch",
+      "evidence": [
+        "flat-batch"
+      ]
+    },
+    {
+      "case": "Unread terminal recovery",
+      "evidence": [
+        "recovery"
+      ]
+    },
+    {
+      "case": "Duplicate retrieval",
+      "evidence": [
+        "consumption-marker"
+      ]
+    },
+    {
+      "case": "Queued cancellation",
+      "evidence": [
+        "queue-timeout",
+        "cancellation"
+      ]
+    },
+    {
+      "case": "Running cancellation",
+      "evidence": [
+        "cancellation"
+      ]
+    },
+    {
+      "case": "Persistence fault",
+      "evidence": [
+        "finalization-faults"
+      ]
+    },
+    {
+      "case": "Deadline stages",
+      "evidence": [
+        "queue-timeout",
+        "running-timeout"
+      ]
+    },
+    {
+      "case": "Preflight rejection",
+      "evidence": [
+        "preflight",
+        "configuration"
+      ]
+    },
+    {
+      "case": "Terminal races",
+      "evidence": [
+        "cancellation",
+        "running-timeout"
+      ]
+    },
+    {
+      "case": "Graceful shutdown",
+      "evidence": [
+        "shutdown"
+      ]
+    },
+    {
+      "case": "Notification failure",
+      "evidence": [
+        "notification-fault"
+      ]
+    },
+    {
+      "case": "Capability isolation",
+      "evidence": [
+        "successful-lifecycle",
+        "report-runtime",
+        "report-boundary"
+      ]
+    },
+    {
+      "case": "Projection bounds",
+      "evidence": [
+        "canonical-allocation",
+        "allocation-invariance",
+        "finalization-faults"
+      ]
+    },
+    {
+      "case": "Branch semantics",
+      "evidence": [
+        "branch-semantics",
+        "malformed-persistence"
+      ]
+    }
+  ],
+  "packedReleaseGates": [
+    {
+      "gate": "Bun unit and type tests",
+      "evidence": [
+        "typecheck",
+        "packed-artifact"
+      ]
+    },
+    {
+      "gate": "deterministic lifecycle conformance",
+      "evidence": [
+        "flat-batch",
+        "cancellation",
+        "finalization-faults",
+        "recovery"
+      ]
+    },
+    {
+      "gate": "packed smoke tests on macOS, Linux, and Windows",
+      "evidence": [
+        "packed-artifact",
+        "release-workflow"
+      ]
+    },
+    {
+      "gate": "fresh exact-version `pi install` verification",
+      "evidence": [
+        "release-workflow"
+      ]
+    },
+    {
+      "gate": "Pi 0.84.3 and latest supported 0.84.x smoke/type checks",
+      "evidence": [
+        "packed-artifact",
+        "host-compatibility"
+      ]
+    },
+    {
+      "gate": "rejection below 0.84.3, at 0.85.0, and on prereleases",
+      "evidence": [
+        "host-compatibility",
+        "packed-artifact"
+      ]
+    },
+    {
+      "gate": "Node 22.19.0 and newest active-LTS checks",
+      "evidence": [
+        "release-workflow",
+        "packed-artifact"
+      ]
+    },
+    {
+      "gate": "tarball allowlist, license, and undeclared-runtime-dependency checks",
+      "evidence": [
+        "packed-artifact"
+      ]
+    },
+    {
+      "gate": "context-budget and drift gates",
+      "evidence": [
+        "context-payload-budget",
+        "context-token-budget"
+      ]
+    },
+    {
+      "gate": "provider-backed battery at its frozen cadence.",
+      "evidence": [
+        "behavioral-matrix",
+        "behavioral-policy",
+        "release-workflow"
+      ]
+    }
+  ],
+  "changeToEvidence": [
+    {
+      "assertion": "Public `createAgentSession`, fresh in-memory child, public ModelRuntime, invocation-boundary projection, abort/dispose",
+      "evidence": [
+        "successful-lifecycle",
+        "cancellation"
+      ]
+    },
+    {
+      "assertion": "Public invocation-bound `agent_start` Child run-start boundary with promise-based rejection classification",
+      "evidence": [
+        "successful-lifecycle",
+        "running-timeout"
+      ]
+    },
+    {
+      "assertion": "Exact Investigation ownership and no arbitrary Agent discovery",
+      "evidence": [
+        "agent-bytes",
+        "report-runtime"
+      ]
+    },
+    {
+      "assertion": "One permanent launch tool, dynamic inspect/cancel, persist-first inbox, steering notification",
+      "evidence": [
+        "successful-lifecycle",
+        "recovery",
+        "notification-fault"
+      ]
+    },
+    {
+      "assertion": "8-child/4-slot FIFO, deadlines, all-settled ordering, outcome precedence, cancellation races, shutdown",
+      "evidence": [
+        "fifo",
+        "flat-batch",
+        "cancellation",
+        "shutdown"
+      ]
+    },
+    {
+      "assertion": "Explicit partial/timeout outcomes, finalizing, visible partial result, separate Host diagnostics",
+      "evidence": [
+        "running-timeout",
+        "finalization-faults",
+        "diagnostic-bounds"
+      ]
+    },
+    {
+      "assertion": "4/2/6 KiB tool budgets, 1,500-token/prompt bounds, 16/4/24/32 KiB envelope bounds, drift policy",
+      "evidence": [
+        "context-payload-budget",
+        "canonical-allocation"
+      ]
+    },
+    {
+      "assertion": "Protected report paths, common-waterline allocation, preflight feasibility, and projection without Terminal-outcome rewrites",
+      "evidence": [
+        "allocation-invariance",
+        "finalization-faults",
+        "preflight"
+      ]
+    },
+    {
+      "assertion": "Four workflows, Luna low/medium/high claim, deterministic lifecycle matrix, cadence",
+      "evidence": [
+        "behavioral-matrix",
+        "behavioral-policy"
+      ]
+    },
+    {
+      "assertion": "Local read-only Investigation, closure-bound Markdown report, preflight completeness, `triggerTurn: true`",
+      "evidence": [
+        "report-runtime",
+        "preflight",
+        "notification-fault"
+      ]
+    },
+    {
+      "assertion": "Exact npm artifact, Pi/Node/Bun boundary, platform matrix, upgrade/release policy",
+      "evidence": [
+        "packed-artifact",
+        "host-compatibility",
+        "release-workflow"
+      ]
+    },
+    {
+      "assertion": "Exact schemas, config, entries, envelopes, codes, paths, transitions, and evidence map",
+      "evidence": [
+        "evidence-inventory"
+      ]
+    }
+  ]
+}

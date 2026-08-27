@@ -4,6 +4,14 @@
   "description": "A deliberately narrow Investigation delegation extension for Pi",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Blaise-g/pi-subagents-minimal.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "keywords": ["pi-package"],
   "engines": { "node": ">=22.19.0" },
   "packageManager": "bun@1.4.0",
@@ -28,6 +36,7 @@
     "pack:test": "bun test test/packed.test.ts",
     "budget:test": "bun test test/context-budget.test.ts",
     "battery:test": "bun test test/behavioral-battery.test.ts",
-    "battery:plan": "bun tools/behavioral-battery.ts plan"
+    "battery:plan": "bun tools/behavioral-battery.ts plan",
+    "release:verify": "bun tools/release.ts verify-inventory"
   }
 }

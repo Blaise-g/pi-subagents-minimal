@@ -1,0 +1,205 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package version to publish (for example 1.0.0)
+        required: true
+        type: string
+      behavioral_records:
+        description: Repository-relative scored full Behavioral-battery records JSON
+        required: true
+        type: string
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install --frozen-lockfile
+      - name: Require a clean exact-version tag
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          test "$REQUESTED_VERSION" = "$PACKAGE_VERSION"
+          DIRTY=false
+          test -z "$(git status --porcelain)" || DIRTY=true
+          bun tools/release.ts verify-identity "$PACKAGE_VERSION" "$REF_TYPE" "$REF_NAME" "$DIRTY"
+          test "$(git rev-list -n1 "v$PACKAGE_VERSION")" = "$GITHUB_SHA"
+      - name: Verify release blockers are closed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for issue in 30 31 32; do
+            test "$(gh api "repos/$GITHUB_REPOSITORY/issues/$issue" --jq .state)" = closed
+          done
+      - name: Verify auditable evidence inventory
+        run: bun tools/release.ts verify-inventory
+      - name: Verify applicable full Behavioral-battery run
+        env:
+          RECORDS: ${{ inputs.behavioral_records }}
+        run: |
+          case "$RECORDS" in /*|*..*) exit 1;; esac
+          test -f "$RECORDS"
+          bun tools/behavioral-battery.ts verify "$RECORDS"
+
+  source:
+    needs: guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run budget:test
+      - run: bun run battery:test
+      - run: bun test
+
+  packed-platform:
+    needs: guard
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        node: [22.19.0, 24.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ matrix.node }}" }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install --frozen-lockfile
+      - run: bun run pack:test
+      - run: bun run typecheck
+      - name: Record exact platform qualification
+        shell: bash
+        run: |
+          mkdir -p qualification
+          node -e 'const fs=require("fs"),p=require("./node_modules/@earendil-works/pi-coding-agent/package.json"); fs.writeFileSync("qualification/platform.json", JSON.stringify({platform:process.platform,piVersion:p.version,nodeVersion:process.versions.node,bunVersion:"1.4.0"})+"\n")'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qualification-${{ matrix.os }}-node-${{ matrix.node }}
+          path: qualification/platform.json
+
+  packed-pi:
+    needs: guard
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pi: [0.84.3, latest-0.84]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22.19.0 }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install --frozen-lockfile
+      - name: Select supported Pi
+        run: |
+          if [ '${{ matrix.pi }}' = latest-0.84 ]; then
+            PI_VERSION=$(npm view @earendil-works/pi-coding-agent versions --json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).filter(v=>/^0\\.84\\.\\d+$/.test(v)).at(-1)))")
+          else PI_VERSION='${{ matrix.pi }}'; fi
+          test -n "$PI_VERSION"
+          echo "PI_VERSION=$PI_VERSION" >> "$GITHUB_ENV"
+      - run: npm install --no-save --ignore-scripts @earendil-works/pi-ai@${PI_VERSION} @earendil-works/pi-coding-agent@${PI_VERSION} typebox@1.3.7 typescript@5.9.3 @types/node@22.19.19 @types/bun@1.3.10
+      - run: bun run pack:test
+      - run: bun run typecheck
+      - name: Record exact Pi qualification
+        run: |
+          mkdir -p qualification
+          node -e 'const fs=require("fs"),p=require("./node_modules/@earendil-works/pi-coding-agent/package.json"); fs.writeFileSync("qualification/pi.json", JSON.stringify({platform:process.platform,piVersion:p.version,nodeVersion:process.versions.node,bunVersion:"1.4.0"})+"\n")'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qualification-pi-${{ matrix.pi }}
+          path: qualification/pi.json
+
+  publish:
+    needs: [guard, source, packed-platform, packed-pi]
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.0 }
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: qualification-*
+          path: release-qualifications
+      - name: Build the exact candidate tarball
+        run: |
+          npm pack --json > pack.json
+          TARBALL=$(node -e 'const p=require("./pack.json"),r=Array.isArray(p)?p[0]:Object.values(p)[0]; console.log(r.filename)')
+          SHA256=$(node -e 'const fs=require("fs"),c=require("crypto"); console.log(c.createHash("sha256").update(fs.readFileSync(process.argv[1])).digest("hex"))' "$TARBALL")
+          echo "$SHA256  $TARBALL" | tee package.sha256
+          echo "TARBALL=$TARBALL" >> "$GITHUB_ENV"
+          echo "TARBALL_SHA256=$SHA256" >> "$GITHUB_ENV"
+      - name: Fresh exact-version candidate install
+        run: |
+          mkdir "$RUNNER_TEMP/candidate"
+          cd "$RUNNER_TEMP/candidate"
+          npm init -y >/dev/null
+          npm install --ignore-scripts --save-exact "$GITHUB_WORKSPACE/$TARBALL" @earendil-works/pi-ai@0.84.3 @earendil-works/pi-coding-agent@0.84.3 typebox@1.3.7
+          test "$(node -p "require('./node_modules/pi-subagents-minimal/package.json').version")" = '${{ inputs.version }}'
+          cd "$GITHUB_WORKSPACE"
+          bun tools/release.ts smoke "$RUNNER_TEMP/candidate/node_modules/pi-subagents-minimal/src/index.ts"
+      - name: Create release record
+        env:
+          RELEASE_PACKAGE_VERSION: ${{ inputs.version }}
+          RELEASE_COMMIT: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TARBALL_SHA256: ${{ env.TARBALL_SHA256 }}
+          RELEASE_BATTERY_RECORDS: ${{ inputs.behavioral_records }}
+        run: bun tools/release.ts create-record release-qualifications release-record.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-record-${{ inputs.version }}
+          path: |
+            release-record.json
+            package.sha256
+            ${{ env.TARBALL }}
+      - name: Publish only after every release gate
+        run: npm publish --provenance --access public "$TARBALL"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Fresh exact-version published pi install
+        run: |
+          mkdir -p "$RUNNER_TEMP/pi-home" "$RUNNER_TEMP/fresh-pi"
+          cd "$RUNNER_TEMP/fresh-pi"
+          HOME="$RUNNER_TEMP/pi-home" "$GITHUB_WORKSPACE/node_modules/.bin/pi" install -l npm:pi-subagents-minimal@${{ inputs.version }}
+          PACKAGE_JSON=$(find .pi "$RUNNER_TEMP/pi-home/.pi" -path '*/pi-subagents-minimal/package.json' -print -quit 2>/dev/null)
+          test -n "$PACKAGE_JSON"
+          test "$(node -p "require('./$PACKAGE_JSON').version")" = '${{ inputs.version }}'
+          HOME="$RUNNER_TEMP/pi-home" bun "$GITHUB_WORKSPACE/tools/release.ts" smoke "$(dirname "$PACKAGE_JSON")/src/index.ts"
+      - name: Attach immutable release records
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" --verify-tag --title "pi-subagents-minimal ${{ inputs.version }}" --notes "Qualified exact-version release. See release-record.json for environment and Behavioral-battery evidence." release-record.json package.sha256 "$TARBALL"
