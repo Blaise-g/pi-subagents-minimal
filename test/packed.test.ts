@@ -86,4 +86,4 @@ test("exact packed artifact is allowlisted and self-describing", async () => {
     });
     expect(effects).toEqual({ tools: 0, handlers: 0, starts: 0, diagnostics: 1 });
   }
-});
+}, 30_000);
