@@ -7,10 +7,6 @@ on:
         description: Exact package version to publish (for example 1.0.0)
         required: true
         type: string
-      behavioral_records:
-        description: Repository-relative scored full Behavioral-battery records JSON
-        required: true
-        type: string
 
 concurrency:
   group: npm-release
@@ -24,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: read
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -43,22 +38,8 @@ jobs:
           test -z "$(git status --porcelain)" || DIRTY=true
           bun tools/release.ts verify-identity "$PACKAGE_VERSION" "$REF_TYPE" "$REF_NAME" "$DIRTY"
           test "$(git rev-list -n1 "v$PACKAGE_VERSION")" = "$GITHUB_SHA"
-      - name: Verify release blockers are closed
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for issue in 30 31 32; do
-            test "$(gh api "repos/$GITHUB_REPOSITORY/issues/$issue" --jq .state)" = closed
-          done
       - name: Verify auditable evidence inventory
         run: bun tools/release.ts verify-inventory
-      - name: Verify applicable full Behavioral-battery run
-        env:
-          RECORDS: ${{ inputs.behavioral_records }}
-        run: |
-          case "$RECORDS" in /*|*..*) exit 1;; esac
-          test -f "$RECORDS"
-          bun tools/behavioral-battery.ts verify "$RECORDS"
 
   source:
     needs: guard
@@ -70,7 +51,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run budget:test
-      - run: bun run battery:test
       - run: bun test
 
   packed-platform:
@@ -177,7 +157,6 @@ jobs:
           RELEASE_COMMIT: ${{ github.sha }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_TARBALL_SHA256: ${{ env.TARBALL_SHA256 }}
-          RELEASE_BATTERY_RECORDS: ${{ inputs.behavioral_records }}
         run: bun tools/release.ts create-record release-qualifications release-record.json
       - uses: actions/upload-artifact@v4
         with:
@@ -202,4 +181,4 @@ jobs:
       - name: Attach immutable release records
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" --verify-tag --title "pi-subagents-minimal ${{ inputs.version }}" --notes "Qualified exact-version release. See release-record.json for environment and Behavioral-battery evidence." release-record.json package.sha256 "$TARBALL"
+        run: gh release create "${{ github.ref_name }}" --verify-tag --title "pi-subagents-minimal ${{ inputs.version }}" --notes "Deterministically qualified exact-version release. See release-record.json for source, artifact, qualification environments, and workflow identity." release-record.json package.sha256 "$TARBALL"

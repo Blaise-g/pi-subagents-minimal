@@ -42,12 +42,12 @@ A `files` allowlist and packed-artifact test exclude tests, fixtures, parent ski
 
 Before tool registration or resource startup, compare Pi's public `VERSION` export against the supported range. An unsupported or prerelease host emits one bounded `HOST_UNSUPPORTED` diagnostic to stderr, registers neither tool, and starts no resource. Pi remains usable.
 
-Releases are built from a clean tagged commit, test the packed npm artifact, publish only from CI with npm provenance, and record package version, commit, Pi/Node/Bun versions, tarball digest, and applicable Behavioral-battery run.
+Releases are built from a clean tagged commit, test the packed npm artifact, publish only from CI with npm provenance, and record package version, commit, Pi/Node/Bun versions, and tarball digest. Releases qualify deterministic behavior and compatibility; they do not certify model-output quality.
 
 ### 2.3 Versioning
 
 - Patch: fixes preserving tool schemas, persisted formats, capability boundaries, and Agent behavior.
-- Minor: compatible additions or material Investigation-definition changes; material Agent changes require the full Behavioral battery.
+- Minor: compatible additions or Significant behavioral changes.
 - Major: incompatible tool/config/schema changes, persisted data that cannot be read transparently, or widened capability.
 
 Every v1 release reads all earlier v1 persisted entries or fails explicitly without silently rewriting them.
@@ -299,7 +299,7 @@ A Concurrency slot is acquired before resource loading and held through child se
 8. never claim access, execution, writes, or verification that did not occur;
 9. stop when the requested answer is established instead of broadening scope.
 
-Tests compare the packaged file bytes with the contract fixture. A material behavioral change requires at least a minor release and the full Behavioral battery.
+Tests compare the packaged file bytes with the contract fixture. A Significant behavioral change requires at least a minor release and an explicit record of whether separate human-reviewed evaluation evidence was collected.
 
 ## 8. Scheduling and lifecycle
 
@@ -628,47 +628,11 @@ Run without a live model through the highest stable public extension boundary, u
 13. **Projection bounds:** UTF-8 boundary cases; an independent common-waterline reference model; permutation invariance across input and completion order; complete report-path reservation; indivisible-remainder non-allocation; 16/4/24/32 KiB boundaries; projection-fault finalizing/retry behavior; immutable child classifications; sanitized errors; and no content duplication.
 14. **Branch semantics:** only active-branch valid envelopes/markers reconstruct; unknown versions and digest mismatches fail explicitly.
 
-### 14.2 Provider-backed Behavioral battery
+### 14.2 Model evaluation policy
 
-The release claim is limited to the exact recorded Pi version and `openai-codex/gpt-5.6-luna` at low, medium, and high Thinking. It does not establish general model compatibility, model quality, or implementation capability.
+Mechanical CI and release gates qualify the deterministic lifecycle, isolation, projection, context-budget, packaging, and compatibility obligations in this contract. They make no certified output-quality claim for any provider, model, Thinking level, prompt, or trial matrix.
 
-Run four scenarios three times at each Thinking level: 36 Workflow trials and 63 child sessions. Every scenario/Thinking cell must pass 3/3. No model judges another model. Record fixture commit, exact prompts, effective tuples, Pi/package versions, event streams, envelopes, usage, wall time, and human binary oracle.
-
-Frozen prompts:
-
-**Repository exploration**
-
-> Using only repository files, locate where `DefaultResourceLoader` combines explicitly supplied `additionalSkillPaths` with automatically discovered skill paths. Return the exact file paths and symbols, explain precedence, and stay within 180 words. Do not modify files.
-
-**Evidence-intensive research**
-
-> Using the official documentation and implementation in this repository, establish the minimum conditions under which `createAgentSession` starts without inherited conversation messages. Distinguish conversation isolation from project-context loading. Cite an exact file and line range for every material claim, separate facts from recommendations, and identify uncertainty rather than guessing. Write the full evidence to `artifacts/session-isolation.md`; return only a concise summary and that path. Do not modify any other file.
-
-**Two-axis diff review**
-
-> Review the changes since tag `battery-base` using `code-review-diff`. Use `docs/spec.md` as the originating specification and the repository’s documented standards. Report Standards and Spec separately. Do not modify files.
-
-**Three-lens simplification**
-
-> Review the fixture’s uncommitted changes using `code-simplify`. Report Reuse, Quality, and Efficiency separately. Do not modify files.
-
-The simplification harness prepares an equivalent uncommitted working-tree diff even when its captured fixture stores base/head snapshots. The oracle manifest remains outside Subagent-visible context.
-
-Frozen oracles:
-
-- **Exploration:** deterministically enforce read-only behavior, the 180-word bound, and citations resolving inside the pinned fixture. Human semantic checks require `DefaultResourceLoader.loadSkills()` and `mergePaths()`; enabled/discovered paths precede `additionalSkillPaths`; canonical duplicates keep the earliest path; additional paths still load with normal discovery disabled. Invented symbols or unsupported precedence fail.
-- **Research:** deterministically require exactly one successful write at `artifacts/session-isolation.md`, concise terminal summary/path rather than report duplication, and existing cited paths/line ranges. Human semantic checks require fresh `SessionManager.inMemory()`, no resume/fork or parent-message injection, explicit separation of conversation history from `DefaultResourceLoader` project context, and stated uncertainty. Uncited material claims, other mutation, or hidden uncertainty fail.
-- **Two-axis review:** Standards and Spec run independently in one Flat batch. Deterministic checks require report-only behavior, separate headings, one aggregate, and input order under forced reverse completion. The hidden critical inventory requires Standards to catch forbidden `any`, bypass of `safeJoin`, query-side mutation, and sequential independent reads; Spec must catch path escape, missing `UserNotFound`, the unrequested write, and removal/scope creep beyond the requested API. Findings must be diff-grounded; fabricated hard findings fail.
-- **Three-lens simplification:** three independent children inspect the same diff. Deterministic checks require report-only behavior and separate Reuse, Quality, and Efficiency outputs. The hidden inventory requires Reuse to find existing `safeJoin` and redundant profile read; Quality to find the query side effect and over-broad/stringly error/state shape; Efficiency to find duplicate read, sequential independent reads, and recurring write. Findings must be grounded; style-only noise cannot become a blocker and unsupported performance claims fail.
-
-A human scores only predeclared binary present/correct/grounded checks. If a predeclared ambiguity proves the oracle wrong, revise the oracle first and rerun the affected cell; never waive a failed run after seeing its answer. Versioned harness fixtures copy these prompts and inventories without semantic alteration.
-
-Cadence:
-
-- deterministic conformance and frozen-fixture oracle checks: every PR;
-- low-Thinking seven-child sweep: weekly/manual, non-blocking drift alert;
-- full matrix: blocking before release and after material Agent, prompt, fixture, Pi runtime, model, Thinking mapping, or participating review-skill changes;
-- unrelated PRs: no provider-backed trials.
+A Significant behavioral change records whether separately designed evaluation evidence is warranted. A Recorded evaluation may be retained for human review when a deliberate one-off assessment of observable model behavior is useful. A smaller Quality smoke may instead provide directional confidence. Both are optional supporting evidence, designed for the change at hand, and neither certifies or blocks a release.
 
 ### 14.3 Packed release gates
 
@@ -683,7 +647,6 @@ Every release candidate, tested from the packed artifact, must pass:
 7. Node 22.19.0 and newest active-LTS checks;
 8. tarball allowlist, license, and undeclared-runtime-dependency checks;
 9. context-budget and drift gates;
-10. provider-backed battery at its frozen cadence.
 
 ## 15. Change-to-evidence map
 
@@ -691,15 +654,14 @@ Every release candidate, tested from the packed artifact, must pass:
 |---|---|---|
 | Public `createAgentSession`, fresh in-memory child, public ModelRuntime, invocation-boundary projection, abort/dispose | [Determine the minimum correct Pi child-session runtime](https://github.com/Blaise-g/pi-subagents-minimal/issues/4) | child integration, isolation, stop-reason, cancellation, cleanup tests |
 | Public invocation-bound `agent_start` Child run-start boundary with promise-based rejection classification | [Identify a public Pi prompt-acceptance boundary](https://github.com/Blaise-g/pi-subagents-minimal/issues/15) | event/promise race, pre-start resolution/rejection, retry/compaction, and timeout/cancellation tests |
-| Exact Investigation ownership and no arbitrary Agent discovery | [Place research and exploration instructions](https://github.com/Blaise-g/pi-subagents-minimal/issues/5) | packaged-byte test, resource/capability isolation, full battery after material change |
+| Exact Investigation ownership and no arbitrary Agent discovery | [Place research and exploration instructions](https://github.com/Blaise-g/pi-subagents-minimal/issues/5) | packaged-byte test and deterministic resource/capability isolation |
 | One permanent launch tool, dynamic inspect/cancel, persist-first inbox, steering notification | [Define the minimal background lifecycle contract](https://github.com/Blaise-g/pi-subagents-minimal/issues/6) | dynamic-tool, recovery, notification ordering/failure tests |
 | 8-child/4-slot FIFO, deadlines, all-settled ordering, outcome precedence, cancellation races, shutdown | [Define concurrency, cancellation, and failure semantics](https://github.com/Blaise-g/pi-subagents-minimal/issues/7) | controlled-clock/state-machine/reference-scheduler tests with red proof |
 | Explicit partial/timeout outcomes, finalizing, visible partial result, separate Host diagnostics | [Compare v1 and Arhen failure semantics](https://github.com/Blaise-g/pi-subagents-minimal/issues/12) | exact envelope and persistence/cleanup fault tests |
 | 4/2/6 KiB tool budgets, 1,500-token/prompt bounds, 16/4/24/32 KiB envelope bounds, drift policy | [Set the v1 context budget](https://github.com/Blaise-g/pi-subagents-minimal/issues/8) | payload snapshots, provider token protocol, UTF-8 boundary/property tests, independent water-fill model |
 | Protected report paths, common-waterline allocation, preflight feasibility, and projection without Terminal-outcome rewrites | [Correct canonical contract acceptance, allocation, and projection semantics](https://github.com/Blaise-g/pi-subagents-minimal/issues/16) | permutation/property tests, protected-metadata rejection, envelope-fault finalizing/retry, and immutable-outcome tests |
-| Four workflows, Luna low/medium/high claim, deterministic lifecycle matrix, cadence | [Freeze the workflow behavioral battery](https://github.com/Blaise-g/pi-subagents-minimal/issues/9) | frozen fixture/oracle harness and recorded 36-trial release run |
 | Local read-only Investigation, closure-bound Markdown report, preflight completeness, `triggerTurn: true` | [Approve the v1 implementation specification](https://github.com/Blaise-g/pi-subagents-minimal/issues/10) | forbidden-capability, unsafe path, preflight no-id/no-start, idle/active notification tests |
 | Exact npm artifact, Pi/Node/Bun boundary, platform matrix, upgrade/release policy | [Set the v1 packaging and compatibility boundary](https://github.com/Blaise-g/pi-subagents-minimal/issues/11) | packed-install/platform/version/tarball/provenance gates |
 | Exact schemas, config, entries, envelopes, codes, paths, transitions, and evidence map | [Freeze the canonical v1 implementation contract](https://github.com/Blaise-g/pi-subagents-minimal/issues/13) | schema snapshots plus an assertion-to-test inventory covering every section above |
 
-Tests follow anchor-before-assertion: this contract and its named source decisions are the external anchors. AI variability is tested only in Workflow trials. Lifecycle, serialization, security, path, compatibility, and packaging claims remain deterministic. Every new behavior requires a defect-revealing red proof before green verification; implementation branches without a contract anchor are not allowed to define expected behavior.
+Tests follow anchor-before-assertion: this contract and its named source decisions are the external anchors. Lifecycle, serialization, security, path, compatibility, and packaging claims remain deterministic. Optional model evaluation is supporting human-reviewed evidence outside mechanical qualification. Every new deterministic behavior requires a defect-revealing red proof before green verification; implementation branches without a contract anchor are not allowed to define expected behavior.
