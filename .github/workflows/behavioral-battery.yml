@@ -20,6 +20,9 @@ on:
       - agents/investigation.md
       - test/behavioral/**
       - tools/behavioral-battery.ts
+      - tools/behavioral-runner.ts
+      - tools/behavioral-observer-extension.ts
+      - test/behavioral/skills/**
       - src/runtime.ts
       - package.json
 

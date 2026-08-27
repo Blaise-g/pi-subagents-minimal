@@ -11,6 +11,11 @@
       "file": "test/projection.test.ts",
       "assertion": "allocation is permutation-independent and protects complete report paths"
     },
+    "behavioral-execution": {
+      "kind": "behavioral",
+      "file": "test/behavioral-runner.test.ts",
+      "assertion": "requires explicit human decisions and preserves a genuine failed score"
+    },
     "behavioral-matrix": {
       "kind": "behavioral",
       "file": "test/behavioral-battery.test.ts",
@@ -425,7 +430,8 @@
       "section": "14.2",
       "evidence": [
         "behavioral-matrix",
-        "behavioral-policy"
+        "behavioral-policy",
+        "behavioral-execution"
       ]
     },
     {
@@ -607,6 +613,7 @@
       "evidence": [
         "behavioral-matrix",
         "behavioral-policy",
+        "behavioral-execution",
         "release-workflow"
       ]
     }
@@ -677,7 +684,8 @@
       "assertion": "Four workflows, Luna low/medium/high claim, deterministic lifecycle matrix, cadence",
       "evidence": [
         "behavioral-matrix",
-        "behavioral-policy"
+        "behavioral-policy",
+        "behavioral-execution"
       ]
     },
     {
