@@ -17,8 +17,9 @@ import {
 import { StringEnum, type Api, type Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { createReportWriter, validateReportPath, verifyReport, type ReportState } from "./report.ts";
+import { allocateTerminalEnvelope, terminalEnvelopeFeasible, type ChildError, type ChildOutcome, type TerminalEnvelope, type ThinkingLevel } from "./projection.ts";
 
-export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+export type { ThinkingLevel } from "./projection.ts";
 export type TaskSpecification = { agent: "investigation"; task: string; model?: string; thinking?: ThinkingLevel; reportPath?: string };
 export type ChildRunRequest = { cwd: string; task: string; model: Model<Api>; thinking: ThinkingLevel; agentDefinition: string; customTools?: ToolDefinition[] };
 export interface ChildSession { messages: readonly unknown[]; subscribe(listener: (event: { type: string }) => void): () => void; prompt(text: string, options?: { expandPromptTemplates?: boolean }): Promise<void>; dispose(): void; abort(): Promise<void> }
@@ -98,11 +99,8 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
   },
 };
 
-type ChildError = { stage: "queue" | "setup" | "run" | "projection"; code: string; message: string };
-type ChildOutcome = { index: 0; outcome: "succeeded" | "failed" | "timed_out" | "cancelled"; effectiveModel: string; effectiveThinking: ThinkingLevel; result?: string; report?: { path: string; summary: string }; partialResult?: string; error?: ChildError; truncation?: { field: "result" | "report.summary" | "partialResult"; originalBytes: number; retainedBytes: number } };
-type TerminalEnvelope = { schemaVersion: 1; delegationId: string; outcome: ChildOutcome["outcome"]; completedAt: string; taskCount: 1; order: "input"; children: [ChildOutcome] };
 type HostDiagnostic = { stage: "cleanup" | "lifecycle" | "persistence"; code: string; message: string; at: string };
-type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancel?: () => Promise<void> };
+type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; childPhase: "queued" | "setup" | "running" | "terminal"; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancel?: () => Promise<void>; finalize?: () => Promise<void> };
 
 const utf8Bytes = (value: string) => Buffer.byteLength(value, "utf8");
 function utf8Prefix(value: string, maximum: number): string {
@@ -160,6 +158,7 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
       const record = records.get(input.delegationId);
       if (!record) throw new Error("[INPUT_INVALID] Unknown Delegation id");
       if (input.action === "cancel" && record.phase !== "terminal" && record.phase !== "finalizing") await record.cancel?.();
+      if (input.action === "inspect" && record.phase === "finalizing") await record.finalize?.();
       if (record.phase !== "terminal") return textResult({ schemaVersion: 1, delegationId: input.delegationId, phase: record.phase, children: [{ index: 0, phase: record.childPhase }], diagnostics: record.diagnostics });
       if (record.unread) {
         const json = compact(record.envelope);
@@ -188,8 +187,11 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
       const parentSession = ctx.sessionManager as typeof ctx.sessionManager & { isPersisted?: () => boolean };
       if (typeof parentSession.isPersisted !== "function" || !parentSession.isPersisted()) fail("PARENT_SESSION_EPHEMERAL", "Parent session must be persisted");
       const definition = await agentDefinition;
-      const maximumEnvelope = compact({ schemaVersion: 1, delegationId: "d_00000000-0000-4000-8000-000000000000", outcome: "succeeded", completedAt: "9999-12-31T23:59:59.999Z", taskCount: 1, order: "input", children: [{ index: 0, outcome: "succeeded", effectiveModel: modelName, effectiveThinking, result: "x" }] });
-      if (utf8Bytes(maximumEnvelope) > 32 * 1024) fail("ENVELOPE_BUDGET_EXCEEDED", "Protected Terminal envelope metadata exceeds its budget");
+      const feasibilityBase = { schemaVersion: 1 as const, delegationId: "d_00000000-0000-4000-8000-000000000000", outcome: "succeeded" as const, completedAt: "9999-12-31T23:59:59.999Z", taskCount: 1, order: "input" as const };
+      const feasibilityChild: ChildOutcome = task.reportPath === undefined
+        ? { index: 0, outcome: "failed", effectiveModel: modelName, effectiveThinking, error: { stage: "projection", code: "PROJECTION_FAILED", message: "x".repeat(512) } }
+        : { index: 0, outcome: "succeeded", effectiveModel: modelName, effectiveThinking, report: { path: task.reportPath, summary: "" } };
+      if (!terminalEnvelopeFeasible(feasibilityBase, [feasibilityChild])) fail("ENVELOPE_BUDGET_EXCEEDED", "Protected Terminal envelope metadata exceeds its budget");
       return { task, modelName, effectiveThinking, modelRuntime, model, definition };
     });
     const { task, modelName, effectiveThinking, modelRuntime, model, definition } = admitted;
@@ -218,16 +220,33 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
         try { child?.dispose(); } catch { diagnostic("CHILD_DISPOSE_FAILED", "Subagent session disposal failed"); }
         child = undefined;
         record.childPhase = "terminal"; record.phase = "finalizing";
-        const envelope: TerminalEnvelope = { schemaVersion: 1, delegationId, outcome: outcome.outcome, completedAt: dependencies.now().toISOString(), taskCount: 1, order: "input", children: [outcome] };
-        try { pi.appendEntry("pi-subagents-minimal:terminal", envelope); }
-        catch { record.diagnostics.push({ stage: "persistence", code: "TERMINAL_PERSIST_FAILED", message: "Terminal envelope persistence failed", at: dependencies.now().toISOString() }); return; }
-        record.envelope = envelope; record.phase = "terminal"; record.unread = true;
-        await updateActivation(true);
-        try { pi.sendMessage({ customType: "pi-subagents-minimal:completion", content: `Delegation ${delegationId} completed: ${envelope.outcome}. Use delegation_control inspect to retrieve it.`, display: true }, { deliverAs: "steer", triggerTurn: true }); }
-        catch { diagnostic("COMPLETION_NOTIFY_FAILED", "Completion notification failed"); }
+        const completedAt = dependencies.now().toISOString();
+        let candidate: TerminalEnvelope | undefined;
+        let notified = false;
+        record.finalize = async () => {
+          if (record.phase !== "finalizing") return;
+          if (candidate === undefined) {
+            try {
+              candidate = allocateTerminalEnvelope({ schemaVersion: 1, delegationId, outcome: outcome.outcome, completedAt, taskCount: 1, order: "input" }, [outcome]);
+            } catch {
+              diagnostic("TERMINAL_PROJECTION_FAILED", "Terminal envelope projection failed");
+              return;
+            }
+          }
+          try { pi.appendEntry("pi-subagents-minimal:terminal", candidate); }
+          catch { record.diagnostics.push({ stage: "persistence", code: "TERMINAL_PERSIST_FAILED", message: "Terminal envelope persistence failed", at: dependencies.now().toISOString() }); return; }
+          record.envelope = candidate; record.phase = "terminal"; record.unread = true;
+          await updateActivation(true);
+          if (!notified) {
+            notified = true;
+            try { pi.sendMessage({ customType: "pi-subagents-minimal:completion", content: `Delegation ${delegationId} completed: ${candidate.outcome}. Use delegation_control inspect to retrieve it.`, display: true }, { deliverAs: "steer", triggerTurn: true }); }
+            catch { diagnostic("COMPLETION_NOTIFY_FAILED", "Completion notification failed"); }
+          }
+        };
+        await record.finalize();
       };
       const base = (outcome: ChildOutcome["outcome"]): ChildOutcome => ({ index: 0, outcome, effectiveModel: modelName, effectiveThinking });
-      const partial = () => { const text = assistantText(child?.messages ?? [])?.text; return text ? utf8Prefix(text, 4096) : undefined; };
+      const partial = () => assistantText(child?.messages ?? [])?.text || undefined;
       const failure = (stage: ChildError["stage"], code: string, message: string, outcome: "failed" | "timed_out" = "failed"): ChildOutcome => {
         const value = base(outcome); value.error = { stage, code, message: safeMessage(message) }; const text = partial(); if (text) value.partialResult = text; return value;
       };
@@ -263,14 +282,10 @@ export function installSuccessfulSingleRuntime(pi: ExtensionAPI, dependencies: R
           if (!reportState.written || !await verifyReport(ctx.cwd, task.reportPath)) {
             await finish(failure(reportState.failed ? "run" : "projection", reportState.failed ? "REPORT_WRITE_FAILED" : "REPORT_MISSING", reportState.failed ? "The declared report write failed" : "The declared report is missing or unsafe")); return;
           }
-          const summary = utf8Prefix(answer.text, 16 * 1024);
-          const success: ChildOutcome = { ...base("succeeded"), report: { path: task.reportPath, summary } };
-          if (utf8Bytes(summary) < utf8Bytes(answer.text)) success.truncation = { field: "report.summary", originalBytes: utf8Bytes(answer.text), retainedBytes: utf8Bytes(summary) };
+          const success: ChildOutcome = { ...base("succeeded"), report: { path: task.reportPath, summary: answer.text } };
           await finish(success); return;
         }
-        const result = utf8Prefix(answer.text, 16 * 1024);
-        const success: ChildOutcome = { ...base("succeeded"), result };
-        if (utf8Bytes(result) < utf8Bytes(answer.text)) success.truncation = { field: "result", originalBytes: utf8Bytes(answer.text), retainedBytes: utf8Bytes(result) };
+        const success: ChildOutcome = { ...base("succeeded"), result: answer.text };
         await finish(success);
       } finally {
         unsubscribe?.();
