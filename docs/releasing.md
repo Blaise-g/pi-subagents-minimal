@@ -1,8 +1,8 @@
 # Releasing an exact version
 
-The `0.2.0` deterministic dogfood qualification is recorded separately in [`dogfood-qualification.json`](dogfood-qualification.json); it is neither a stable publication record nor a model-quality claim.
+`pi-subagents-minimal` is currently versioned `0.2.0` for local validation. Local path installation is documented in the README and does not use this procedure. Its deterministic dogfood qualification is recorded separately in [`dogfood-qualification.json`](dogfood-qualification.json); it is neither a stable publication record nor a model-quality claim.
 
-A public package version is published only by `.github/workflows/release.yml`. A local `npm publish` is not a release path. The stable `1.0.0` release follows every step below.
+A public package version is published only by `.github/workflows/release.yml`. A local `npm publish` is not a release path. Stable `1.0.0` publication is deliberately deferred until public distribution is useful; first set the package version to `1.0.0` in a reviewed commit, then follow every step below.
 
 ## Prerequisites
 
