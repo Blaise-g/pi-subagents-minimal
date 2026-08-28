@@ -4,7 +4,7 @@ A deliberately narrow Pi extension for isolated, bounded repository analysis. It
 
 ## Status and canonical contract
 
-The installed `0.2.0` code is for local dogfooding against the approved [implementation contract](docs/spec/v1-implementation-contract.md). The retained [proposal](docs/spec/v0.2-generic-subagent-capabilities-proposal.md) and [independent review](docs/spec/v0.2-generic-subagent-capabilities-review.md) are historical design evidence, not normative requirements.
+The stable `1.0.0` package implements the approved [implementation contract](docs/spec/v1-implementation-contract.md). The retained [proposal](docs/spec/v0.2-generic-subagent-capabilities-proposal.md) and [independent review](docs/spec/v0.2-generic-subagent-capabilities-review.md) are historical design evidence, not normative requirements.
 
 ## Development install
 
@@ -18,7 +18,7 @@ Pi references a local package in place, so source changes are available in the n
 
 Supported hosts are stable Pi `>=0.84.3 <0.85.0` and Node `>=22.19.0`.
 
-## Upcoming `0.2.0` surface
+## Stable `1.0.0` surface
 
 `delegate` starts one bounded Subagent or a flat batch in the background. Pi receives a concise completion notification and can use `delegation_control` to inspect the durable result or cancel live work.
 
@@ -39,7 +39,7 @@ External web access remains excluded. A separate planned `0.3.0` decision will s
 
 ## Public release
 
-The planned stable install remains:
+Install the exact stable version:
 
 ```sh
 pi install npm:pi-subagents-minimal@1.0.0

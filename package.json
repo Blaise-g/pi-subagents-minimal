@@ -1,6 +1,6 @@
 {
   "name": "pi-subagents-minimal",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "A deliberately narrow Subagent delegation extension for Pi",
   "type": "module",
   "license": "MIT",

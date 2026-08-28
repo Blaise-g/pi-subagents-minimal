@@ -41,6 +41,7 @@ test("exact packed artifact is allowlisted and self-describing", async () => {
   expect((await readdir(packageRoot)).sort()).toEqual(["LICENSE", "README.md", "agents", "package.json", "src"]);
 
   const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
+  expect(manifest.version).toBe("1.0.0");
   expect(manifest.pi).toEqual({ extensions: ["./src/index.ts"] });
   expect(manifest.engines).toEqual({ node: ">=22.19.0" });
   expect(manifest.packageManager).toBe("bun@1.4.0");
