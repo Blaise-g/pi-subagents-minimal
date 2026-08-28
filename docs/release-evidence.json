@@ -155,6 +155,11 @@
       "kind": "deterministic",
       "file": "test/cancellation.test.ts",
       "assertion": "unknown Delegation ids return a sanitized error"
+    },
+    "git-process-boundary": {
+      "kind": "deterministic",
+      "file": "test/git-boundary.test.ts",
+      "assertion": "guarded Git process boundary"
     }
   },
   "contractSections": [
@@ -431,6 +436,12 @@
       "evidence": [
         "evidence-inventory"
       ]
+    },
+    {
+      "section": "7.2",
+      "evidence": [
+        "git-process-boundary"
+      ]
     }
   ],
   "lifecycleConformance": [
@@ -525,6 +536,31 @@
       "evidence": [
         "branch-semantics",
         "malformed-persistence"
+      ]
+    },
+    {
+      "case": "Git semantics",
+      "evidence": [
+        "git-process-boundary"
+      ]
+    },
+    {
+      "case": "Git bounds",
+      "evidence": [
+        "git-process-boundary"
+      ]
+    },
+    {
+      "case": "Git process safety",
+      "evidence": [
+        "git-process-boundary"
+      ]
+    },
+    {
+      "case": "Prompt and package",
+      "evidence": [
+        "agent-bytes",
+        "packed-artifact"
       ]
     }
   ],
@@ -675,6 +711,14 @@
       "assertion": "Exact schemas, config, entries, envelopes, codes, paths, transitions, and evidence map",
       "evidence": [
         "evidence-inventory"
+      ]
+    },
+    {
+      "assertion": "Closed additions-only Task tools, canonical effective tools, v2 envelopes, exact legacy v1 persistence",
+      "evidence": [
+        "preflight",
+        "recovery",
+        "successful-lifecycle"
       ]
     }
   ]
