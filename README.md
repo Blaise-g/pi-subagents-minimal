@@ -33,7 +33,9 @@ Examples of parent requests:
 
 The `research`, `code-review-diff`, and `code-simplify` skills are external parent workflows and are not bundled. They own task framing and result consumption. Bash, PowerShell, tests/checks, generic Git, arbitrary tool forwarding, and external web access are deferred from `0.2.0`.
 
-Deterministic qualification covers extension behavior and compatibility. Optional Recorded evaluations or Quality smokes answer concrete model-behavior questions; they are not CI, release gates, or a Behavioral battery.
+Deterministic qualification covers extension behavior and compatibility. Version 1 terminal envelopes remain readable byte-for-byte while new results use version 2 authority metadata. Optional Recorded evaluations or Quality smokes answer concrete model-behavior questions; they are not CI, release gates, or a Behavioral battery. The reviewed `0.2.0` candidate record is [dogfood-qualification.json](docs/dogfood-qualification.json).
+
+External web access remains excluded. A separate planned `0.3.0` decision will specify whether and how delegated web research can be added without widening `0.2.0`.
 
 ## Public release
 

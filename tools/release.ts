@@ -148,7 +148,7 @@ async function createRecord(metadataDirectory: string, output: string): Promise<
   await writeFile(output, `${JSON.stringify(record, null, 2)}\n`);
 }
 
-async function smoke(extensionPath: string): Promise<void> {
+export async function smoke(extensionPath: string): Promise<void> {
   const { createEventBus, DefaultResourceLoader } = await import("@earendil-works/pi-coding-agent");
   const eventBus = createEventBus();
   const loader = new DefaultResourceLoader({
@@ -161,7 +161,7 @@ async function smoke(extensionPath: string): Promise<void> {
   if (loaded.errors.length > 0) throw new Error(loaded.errors.map(({ error }) => error).join("\n"));
   if (loaded.extensions.length !== 1) throw new Error(`expected one extension, got ${loaded.extensions.length}`);
   const names = [...loaded.extensions[0]!.tools.keys()].sort();
-  if (JSON.stringify(names) !== JSON.stringify(["delegation_control", "delegate"])) throw new Error(`unexpected tools: ${names.join(", ")}`);
+  if (JSON.stringify(names) !== JSON.stringify(["delegate", "delegation_control"])) throw new Error(`unexpected tools: ${names.join(", ")}`);
   console.log("Packed smoke passed: delegate plus inactive-by-default delegation_control are the only package tools.");
 }
 

@@ -1,10 +1,10 @@
 {
-  "justification": "Initial approved v1 measurement baseline; deterministic values are reproduced by test/context-budget.test.ts.",
+  "justification": "Reviewed 0.2.0 generic Task and git_diff surface measurement. Launch-only grew from 1174 to 1190 bytes and both-active from 1527 to 1543 bytes (under 2%); control and prompt text are unchanged. Values are reproduced by test/context-budget.test.ts.",
   "protocol": { "pi": "0.84.3", "provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "medium", "session": "fresh --no-session project", "prompt": "Reply with exactly OK.", "repetitions": 2, "packagePromptText": "" },
   "deterministic": {
-    "launchOnlyBytes": { "baseline": 1174, "ceiling": 4096 },
+    "launchOnlyBytes": { "baseline": 1190, "ceiling": 4096 },
     "controlOnlyBytes": { "baseline": 354, "ceiling": 2048 },
-    "bothActiveBytes": { "baseline": 1527, "ceiling": 6144 },
+    "bothActiveBytes": { "baseline": 1543, "ceiling": 6144 },
     "addedPromptChars": { "baseline": 0, "ceiling": 1500 }
   },
   "provider": {

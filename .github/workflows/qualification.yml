@@ -32,6 +32,8 @@ jobs:
         with: { bun-version: 1.4.0 }
       - run: bun install --frozen-lockfile
       - run: bun test test/packed.test.ts
+      - name: Supported-platform Git semantics and process safety
+        run: bun test test/git-boundary.test.ts test/git-diff.test.ts
       - name: Generate package digest
         shell: bash
         run: |
@@ -61,12 +63,17 @@ jobs:
       - run: npm install --no-save --ignore-scripts @earendil-works/pi-ai@${PI_VERSION} @earendil-works/pi-coding-agent@${PI_VERSION} typebox@1.3.7 typescript@5.9.3 @types/node@22.19.19 @types/bun@1.3.10
       - run: bun test test/packed.test.ts
       - run: bun run typecheck
-      - name: Fresh tarball installation
+      - name: Fresh local candidate pi install
         shell: bash
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           TARBALL=$(npm pack --silent)
-          mkdir fresh && cd fresh
-          npm init -y >/dev/null
-          npm install --ignore-scripts --save-exact ../"$TARBALL" @earendil-works/pi-coding-agent@"$PI_VERSION"
-          node -e "const p=require('./node_modules/pi-subagents-minimal/package.json'); if(p.version!==process.argv[1]||p.pi.extensions.length!==1) process.exit(1)" "$PACKAGE_VERSION"
+          mkdir fresh package-root pi-home
+          tar -xzf "$TARBALL" -C package-root
+          PACKAGE_ROOT="$PWD/package-root/package"
+          cd fresh
+          HOME="$GITHUB_WORKSPACE/pi-home" "$GITHUB_WORKSPACE/node_modules/.bin/pi" install -l "$PACKAGE_ROOT"
+          node -e 'const fs=require("fs"),p=JSON.parse(fs.readFileSync(".pi/settings.json")); if(!p.packages.includes(process.argv[1])) process.exit(1)' "$PACKAGE_ROOT"
+          cd "$GITHUB_WORKSPACE"
+          bun tools/release.ts smoke "$PACKAGE_ROOT/src/index.ts"
+          node -e 'const p=require(process.argv[1]); if(p.version!==process.argv[2]||p.pi.extensions.length!==1) process.exit(1)' "$PACKAGE_ROOT/package.json" "$PACKAGE_VERSION"

@@ -161,6 +161,16 @@
       "file": "test/git-boundary.test.ts",
       "assertion": "guarded Git process boundary"
     },
+    "git-semantics-bounds": {
+      "kind": "deterministic",
+      "file": "test/git-diff.test.ts",
+      "assertion": "literal path filtering includes both rename endpoints and exact UTF-8 truncation metadata"
+    },
+    "dogfood-qualification": {
+      "kind": "release",
+      "file": "docs/dogfood-qualification.json",
+      "assertion": "deterministic-dogfood-candidate"
+    },
     "review-workflows": {
       "kind": "deterministic",
       "file": "test/review-workflows.test.ts",
@@ -434,7 +444,8 @@
       "evidence": [
         "release-workflow",
         "packed-artifact",
-        "context-payload-budget"
+        "context-payload-budget",
+        "dogfood-qualification"
       ]
     },
     {
@@ -547,13 +558,15 @@
     {
       "case": "Git semantics",
       "evidence": [
-        "git-process-boundary"
+        "git-process-boundary",
+        "git-semantics-bounds"
       ]
     },
     {
       "case": "Git bounds",
       "evidence": [
-        "git-process-boundary"
+        "git-process-boundary",
+        "git-semantics-bounds"
       ]
     },
     {
