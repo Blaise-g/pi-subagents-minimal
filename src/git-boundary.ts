@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { realpath, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 
-export type GitBoundaryErrorCode = "GIT_UNAVAILABLE" | "GIT_REPOSITORY_UNAVAILABLE" | "GIT_UNSAFE_REPOSITORY" | "GIT_TIMEOUT" | "GIT_OUTPUT_OVERFLOW" | "GIT_INPUT_INVALID" | "GIT_PROCESS_FAILED" | "GIT_OUTPUT_INVALID";
+export type GitBoundaryErrorCode = "GIT_UNAVAILABLE" | "GIT_REPOSITORY_UNAVAILABLE" | "GIT_UNSAFE_REPOSITORY" | "GIT_HISTORY_INCOMPLETE" | "GIT_TIMEOUT" | "GIT_OUTPUT_OVERFLOW" | "GIT_INPUT_INVALID" | "GIT_PROCESS_FAILED" | "GIT_OUTPUT_INVALID";
 export class GitBoundaryError extends Error {
   constructor(readonly code: GitBoundaryErrorCode, message: string) { super(`[${code}] ${bounded(message)}`); this.name = "GitBoundaryError"; }
 }
@@ -24,7 +24,7 @@ export function validateFixedPoint(value: string): string {
   return value;
 }
 export function validateLiteralPath(value: string): string {
-  if (!value || Buffer.byteLength(value) > 4096 || CONTROL.test(value) || value.includes("\\") || isAbsolute(value) || /^[A-Za-z]:/.test(value) || value.startsWith("-") || value.startsWith(":") || value === ".") throw new GitBoundaryError("GIT_INPUT_INVALID", "Path must be a normalized project-relative literal path");
+  if (!value || Buffer.byteLength(value) > 4096 || CONTROL.test(value) || /[\\*?\[]/.test(value) || isAbsolute(value) || /^[A-Za-z]:/.test(value) || value.startsWith("-") || value.startsWith(":") || value === ".") throw new GitBoundaryError("GIT_INPUT_INVALID", "Path must be a normalized project-relative literal path");
   const parts = value.split("/");
   if (parts.some((part) => !part || part === "." || part === "..")) throw new GitBoundaryError("GIT_INPUT_INVALID", "Path traversal and empty segments are not permitted");
   return value;
@@ -71,9 +71,11 @@ export async function createGitBoundary(cwd: string, supplied: BoundaryOptions =
     async resolveCommit(fixedPoint: string) { const fixed = validateFixedPoint(fixedPoint); const result = await invoke(root, ["rev-parse", "--verify", "--end-of-options", `${fixed}^{commit}`], options); const commit = result.stdout.trim(); if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new GitBoundaryError("GIT_OUTPUT_INVALID", "Git returned an invalid commit identity"); return commit; },
     async head() { try { return await this.resolveCommit("HEAD"); } catch (error) { if (error instanceof GitBoundaryError && error.code === "GIT_PROCESS_FAILED") return undefined; throw error; } },
     async emptyTree() { const result = await invoke(root, ["hash-object", "-t", "tree", "--stdin"], options); const commit = result.stdout.trim(); if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new GitBoundaryError("GIT_OUTPUT_INVALID", "Git returned an invalid empty-tree identity"); return commit; },
+    async mergeBase(left: string, right: string) { requireCommit(left); requireCommit(right); try { const result = await invoke(root, ["merge-base", left, right], options); const commit = result.stdout.trim(); requireCommit(commit); return commit; } catch (error) { if (error instanceof GitBoundaryError && error.code === "GIT_PROCESS_FAILED") throw new GitBoundaryError("GIT_HISTORY_INCOMPLETE", "No merge base is available; repository history may be incomplete"); throw error; } },
+    async commitSummary(fixed: string, head: string) { requireCommit(fixed); requireCommit(head); return invoke(root, ["log", "--no-show-signature", "--format=%H%x09%s", `${fixed}..${head}`, "--"], options); },
     async nameStatus(baseCommit: string) { requireCommit(baseCommit); return invoke(root, ["diff", "--name-status", "--find-renames", baseCommit, "--"], options); },
     async numstat(baseCommit: string) { requireCommit(baseCommit); return invoke(root, ["diff", "--numstat", "--find-renames", baseCommit, "--"], options); },
     async untracked() { return invoke(root, ["ls-files", "--others", "--exclude-standard"], options); },
-    async diff(baseCommit: string, path?: string) { requireCommit(baseCommit); const args = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--find-renames", "--unified=3", baseCommit]; if (path !== undefined) { const literal = validateLiteralPath(path); await confined(root, literal); args.push("--", literal); } else args.push("--"); return invoke(root, args, options); },
+    async diff(baseCommit: string, paths?: string | string[]) { requireCommit(baseCommit); const args = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--find-renames", "--unified=3", baseCommit, "--"]; for (const path of typeof paths === "string" ? [paths] : paths ?? []) { const literal = validateLiteralPath(path); await confined(root, literal); args.push(literal); } return invoke(root, args, options); },
   };
 }

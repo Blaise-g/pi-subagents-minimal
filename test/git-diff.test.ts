@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createGitBoundary } from "../src/git-boundary.ts";
-import { renderWorkingTree } from "../src/git-diff.ts";
+import { renderGitDiff, renderWorkingTree } from "../src/git-diff.ts";
 
 const roots: string[] = [];
 afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))));
@@ -37,4 +37,38 @@ test("reports a clean tree explicitly and omits an oversized aggregate patch in 
   expect(rendered.details.patchIncluded).toBe(false);
   expect(rendered.content).toContain("Raw patch omitted"); expect(rendered.content).not.toContain("x".repeat(100));
   expect(Buffer.byteLength(rendered.content)).toBeLessThanOrEqual(80 * 1024);
+});
+
+test("compares a fixed point merge base through committed and working-tree changes", async () => {
+  const root = await repo(); const fixed = await git(root, "rev-parse", "HEAD");
+  await writeFile(join(root, "committed.txt"), "committed\n"); await git(root, "add", "."); await git(root, "commit", "-qm", "branch work");
+  await writeFile(join(root, "unstaged.txt"), "working\n"); await writeFile(join(root, "untracked.txt"), "untracked\n");
+  const rendered = await renderGitDiff(await createGitBoundary(root), { comparison: "since", fixedPoint: fixed });
+  expect(rendered.content).toContain(`Resolved fixed point: ${fixed}`);
+  expect(rendered.content).toContain("branch work");
+  expect(rendered.content).toContain("committed.txt"); expect(rendered.content).toContain("unstaged.txt"); expect(rendered.content).toContain("untracked.txt");
+  expect(rendered.details).toMatchObject({ comparison: "since", resolvedFixedPoint: fixed, changedFiles: 2, untrackedFiles: 1 });
+});
+
+test("fixed point ahead of HEAD uses HEAD as merge base and an explicit empty summary", async () => {
+  const root = await repo(); const head = await git(root, "rev-parse", "HEAD");
+  await git(root, "checkout", "-qb", "ahead"); await writeFile(join(root, "ahead.txt"), "ahead\n"); await git(root, "add", "."); await git(root, "commit", "-qm", "ahead"); const ahead = await git(root, "rev-parse", "HEAD");
+  await git(root, "checkout", "-q", head); await writeFile(join(root, "unstaged.txt"), "local\n");
+  const rendered = await renderGitDiff(await createGitBoundary(root), { comparison: "since", fixedPoint: ahead });
+  expect(rendered.details.resolvedBase).toBe(head); expect(rendered.content).toContain("Commit summary:\n(empty)"); expect(rendered.content).toContain("unstaged.txt");
+});
+
+test("literal path filtering includes both rename endpoints and exact UTF-8 truncation metadata", async () => {
+  const root = await repo(); await git(root, "mv", "staged.txt", "renamed.txt");
+  const renamed = await renderGitDiff(await createGitBoundary(root), { comparison: "working_tree", path: "staged.txt" });
+  expect(renamed.content).toContain("staged.txt -> renamed.txt"); expect(renamed.content).toContain("rename from staged.txt"); expect(renamed.content).toContain("rename to renamed.txt");
+  await writeFile(join(root, "unstaged.txt"), "é".repeat(40_000));
+  const large = await renderGitDiff(await createGitBoundary(root, { maxOutputBytes: 200_000 }), { comparison: "working_tree", path: "unstaged.txt" });
+  expect(large.details).toMatchObject({ patchIncluded: true, patchTruncated: true, retainedPatchBytes: 65536 });
+  expect(large.content).toContain("evidence is incomplete"); expect(Buffer.from(large.content).toString("utf8")).not.toContain("�");
+});
+
+test("since fails explicitly when HEAD does not exist", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-since-unborn-")); roots.push(root); await git(root, "init", "-q");
+  await expect(renderGitDiff(await createGitBoundary(root), { comparison: "since", fixedPoint: "HEAD" })).rejects.toThrow("GIT_HISTORY_INCOMPLETE");
 });
