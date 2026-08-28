@@ -15,5 +15,6 @@ Issues and specifications for this repository live as GitHub issues. Use the `gh
 ## General operations
 
 - Create, read, comment on, label, assign, and close issues with `gh issue` or `gh api`.
-- Read a relevant issue with its comments and labels.
+- When a skill says to publish to the issue tracker, create a GitHub issue.
+- When a skill says to fetch a ticket, read that issue with its comments and labels.
 - Pull requests are not a request or triage surface.
