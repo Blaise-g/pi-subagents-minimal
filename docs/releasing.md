@@ -10,6 +10,8 @@ A public package version is published only by `.github/workflows/release.yml`. A
 2. Commit a lockfile-clean checkout whose package version is the intended version, then create and push the matching tag (`v1.0.0` for package `1.0.0`).
 3. Configure the GitHub `npm` environment with required reviewer protection. Configure npm trusted publishing for `release.yml`; `NPM_TOKEN` is a CI-only fallback for the initial publication before package-level trusted-publisher settings exist.
 
+If a tagged candidate fails before npm publication and a release fix is subsequently merged, the unpublished tag may be replaced deliberately: verify that the exact version is absent from npm and that no GitHub release exists, delete the old remote tag, create the same tag at the final clean release commit, and record the replacement on the release ticket. Never move a tag after publication or silently dispatch a commit different from the tag target.
+
 ## Publication
 
 From the matching tag, dispatch the **release** workflow with the exact version. The workflow refuses a branch, mismatched tag, dirty checkout, missing evidence, or failed deterministic gate.

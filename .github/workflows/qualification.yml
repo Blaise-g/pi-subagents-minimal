@@ -8,7 +8,7 @@ jobs:
   source:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.0 }
       - run: bun install --frozen-lockfile
@@ -25,8 +25,8 @@ jobs:
         node: [22.19.0, 24.x]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: "${{ matrix.node }}" }
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.0 }
@@ -47,8 +47,8 @@ jobs:
       matrix:
         pi: [0.84.3, latest-0.84]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22.19.0 }
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: 1.4.0 }

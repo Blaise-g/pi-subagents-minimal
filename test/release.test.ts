@@ -105,6 +105,11 @@ describe("release qualification", () => {
     expect(workflow).toContain("npm publish --provenance --access public");
     expect(workflow).toContain("install -l npm:pi-subagents-minimal@");
     expect(workflow).toContain("environment: npm");
+    expect(workflow).toContain("actions/checkout@v5");
+    expect(workflow).toContain("actions/setup-node@v5");
+    expect(workflow).toContain("actions/upload-artifact@v6");
+    expect(workflow).toContain("actions/download-artifact@v7");
+    expect(workflow).not.toMatch(/actions\/(?:checkout|setup-node|upload-artifact|download-artifact)@v4/);
 
     const qualification = await readFile(resolve(root, ".github/workflows/qualification.yml"), "utf8");
     expect(qualification).toContain('PACKAGE_VERSION=$(node -p "require(\'./package.json\').version")');
@@ -112,6 +117,9 @@ describe("release qualification", () => {
     expect(qualification).toContain("bun test test/git-boundary.test.ts test/git-diff.test.ts");
     expect(qualification).toContain("Fresh local candidate pi install");
     expect(qualification).toContain('pi" install -l "$PACKAGE_ROOT"');
+    expect(qualification).toContain("actions/checkout@v5");
+    expect(qualification).toContain("actions/setup-node@v5");
+    expect(qualification).not.toMatch(/actions\/(?:checkout|setup-node)@v4/);
 
     const publish = workflow.indexOf("npm publish --provenance --access public");
     expect(publish).toBeGreaterThan(workflow.indexOf("Fresh exact-version candidate install"));
