@@ -1,7 +1,7 @@
 # Canonical Implementation Contract
 
 Status: **Approved for implementation**
-Current implementation target: `pi-subagents-minimal@1.0.0`
+Current implementation target: `pi-subagents-minimal@0.2.0`
 Future stable release target: `pi-subagents-minimal@1.0.0`
 Contract revision: `2`
 
