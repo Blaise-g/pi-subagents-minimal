@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 import { allocateTerminalEnvelope } from "../src/projection.ts";
 
 const id = "d_00000000-0000-4000-8000-000000000000";

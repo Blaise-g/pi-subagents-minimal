@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: () => Promise<never>; persisted?: boolean; prepareGit?: () => Promise<any> } = {}) {
   const effects = { ids: 0, children: 0, entries: 0, activations: 0, requests: [] as any[] };

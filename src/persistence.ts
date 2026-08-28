@@ -19,7 +19,9 @@ const childOutcomes = new Set(["succeeded", "failed", "timed_out", "cancelled"])
 const parentOutcomes = new Set(["succeeded", "partial", "failed", "timed_out", "cancelled"]);
 const legalEffectiveTools: readonly (readonly EffectiveTool[])[] = [
   ["read", "grep", "find", "ls"],
+  ["read", "grep", "find", "ls", "git_diff"],
   ["read", "grep", "find", "ls", "write_report"],
+  ["read", "grep", "find", "ls", "git_diff", "write_report"],
 ];
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const exactKeys = (value: Record<string, unknown>, required: string[], optional: string[] = []) => required.every((key) => key in value) && Object.keys(value).every((key) => required.includes(key) || optional.includes(key));

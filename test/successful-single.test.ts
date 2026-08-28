@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 const waitUntil = async (predicate: () => boolean) => {
   for (let attempt = 0; attempt < 50; attempt++) {

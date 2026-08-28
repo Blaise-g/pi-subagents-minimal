@@ -1,8 +1,8 @@
 import { StringEnum } from "@earendil-works/pi-ai";
 import { VERSION, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { readStartupConfig, type StartupConfig } from "./config.ts";
-import { defaultRuntimeDependencies, installSuccessfulSingleRuntime, type RuntimeDependencies } from "./runtime.ts";
+import { readStartupConfig, type StartupConfig } from "../src/config.ts";
+import { defaultRuntimeDependencies, installSuccessfulSingleRuntime, type RuntimeDependencies } from "../src/runtime.ts";
 
 const PI_RANGE = ">=0.84.3 <0.85.0";
 const NODE_MINIMUM = [22, 19, 0] as const;

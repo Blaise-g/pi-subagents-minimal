@@ -27,7 +27,7 @@ pi install npm:pi-subagents-minimal@1.0.0
 
 The npm tarball contains only:
 
-- `package.json`, with one explicit `pi.extensions` entry for `./src/index.ts`;
+- `package.json`, with one explicit `pi.extensions` entry for `./extensions/subagents-minimal.ts`;
 - TypeScript extension/runtime modules loaded directly by Pi through jiti;
 - `agents/subagent.md`, the sole role-neutral definition, selected internally by exact identity and not exposed as a Pi skill or prompt;
 - `README.md`, `LICENSE`, and required notices.

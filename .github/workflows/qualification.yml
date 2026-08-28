@@ -75,5 +75,5 @@ jobs:
           HOME="$GITHUB_WORKSPACE/pi-home" "$GITHUB_WORKSPACE/node_modules/.bin/pi" install -l "$PACKAGE_ROOT"
           node -e 'const fs=require("fs"),path=require("path"),file=path.resolve(".pi/settings.json"),p=JSON.parse(fs.readFileSync(file)),installed=fs.realpathSync(path.resolve(path.dirname(file),p.packages[0])); if(p.packages.length!==1||installed!==fs.realpathSync(process.argv[1])) process.exit(1)' "$PACKAGE_ROOT"
           cd "$GITHUB_WORKSPACE"
-          bun tools/release.ts smoke "$PACKAGE_ROOT/src/index.ts"
+          bun tools/release.ts smoke "$PACKAGE_ROOT/extensions/subagents-minimal.ts"
           node -e 'const p=require(process.argv[1]); if(p.version!==process.argv[2]||p.pi.extensions.length!==1) process.exit(1)' "$PACKAGE_ROOT/package.json" "$PACKAGE_VERSION"

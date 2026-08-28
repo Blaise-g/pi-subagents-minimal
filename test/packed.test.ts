@@ -6,8 +6,8 @@ import { join, resolve } from "node:path";
 import { loadExtensionHarness } from "./harness.ts";
 
 const approvedFiles = [
-  "LICENSE", "README.md", "agents/subagent.md", "package.json",
-  "src/config.ts", "src/git-boundary.ts", "src/git-diff.ts", "src/index.ts", "src/persistence.ts", "src/projection.ts",
+  "LICENSE", "README.md", "agents/subagent.md", "extensions/subagents-minimal.ts", "package.json",
+  "src/config.ts", "src/git-boundary.ts", "src/git-diff.ts", "src/persistence.ts", "src/projection.ts",
   "src/report.ts", "src/runtime.ts",
 ];
 
@@ -38,11 +38,11 @@ test("exact packed artifact is allowlisted and self-describing", async () => {
   await Bun.$`mkdir -p ${unpacked}`;
   await Bun.$`tar -xzf ${tarball} -C ${unpacked}`;
   const packageRoot = join(unpacked, "package");
-  expect((await readdir(packageRoot)).sort()).toEqual(["LICENSE", "README.md", "agents", "package.json", "src"]);
+  expect((await readdir(packageRoot)).sort()).toEqual(["LICENSE", "README.md", "agents", "extensions", "package.json", "src"]);
 
   const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
   expect(manifest.version).toBe("0.2.0");
-  expect(manifest.pi).toEqual({ extensions: ["./src/index.ts"] });
+  expect(manifest.pi).toEqual({ extensions: ["./extensions/subagents-minimal.ts"] });
   expect(manifest.engines).toEqual({ node: ">=22.19.0" });
   expect(manifest.packageManager).toBe("bun@1.4.0");
   expect(manifest.dependencies).toBeUndefined();
@@ -53,8 +53,11 @@ test("exact packed artifact is allowlisted and self-describing", async () => {
   });
   expect(await readFile(join(packageRoot, "LICENSE"), "utf8")).toContain("MIT License");
 
+  const typescriptPaths = paths.filter((path) => path.endsWith(".ts"));
+  expect(typescriptPaths).toContain(manifest.pi.extensions[0].replace(/^\.\//, ""));
+
   const externalImports = new Set<string>();
-  for (const path of paths.filter((path) => path.startsWith("src/"))) {
+  for (const path of typescriptPaths) {
     const source = await readFile(join(packageRoot, path), "utf8");
     for (const match of source.matchAll(/from\s+["']([^"']+)["']/g)) {
       const specifier = match[1]!;
@@ -70,7 +73,7 @@ test("exact packed artifact is allowlisted and self-describing", async () => {
   const typecheck = Bun.spawn([
     process.execPath, resolve("node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck",
     "--target", "ES2022", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--allowImportingTsExtensions",
-    ...paths.filter((path) => path.startsWith("src/")).map((path) => join(packageRoot, path)),
+    ...typescriptPaths.map((path) => join(packageRoot, path)),
   ], { cwd: packageRoot, stdout: "pipe", stderr: "pipe" });
   const typecheckError = await new Response(typecheck.stderr).text();
   expect(await typecheck.exited, typecheckError).toBe(0);

@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { createEventBus, DefaultResourceLoader } from "@earendil-works/pi-coding-agent";
 
 export interface ControlledCollaborators {
@@ -21,7 +22,7 @@ export async function loadExtensionHarness(
   const eventBus = createEventBus();
   const loader = new DefaultResourceLoader({
     cwd: process.cwd(),
-    agentDir: process.cwd(),
+    agentDir: resolve("test/fixtures/empty-agent-dir"),
     eventBus,
     additionalExtensionPaths: [extensionPath],
     noSkills: true,

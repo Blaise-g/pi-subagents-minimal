@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "bun:test";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 const id = "d_00000000-0000-4000-8000-000000000000";
 const envelope = { schemaVersion: 1, delegationId: id, outcome: "succeeded", completedAt: "2026-01-02T03:04:05.000Z", taskCount: 1, order: "input", children: [{ index: 0, outcome: "succeeded", effectiveModel: "test/model", effectiveThinking: "high", result: "byte stable ✓" }] } as const;
@@ -71,6 +71,21 @@ test("reconstructs interleaved v1 and v2 envelopes and consumes their exact pers
   const legacyBody = JSON.parse((await f.inspect()).content[0].text);
   expect(legacyBody.envelope.children[0]).not.toHaveProperty("effectiveTools");
   expect(body.envelope.children[0]).toHaveProperty("effectiveTools");
+});
+
+test("reconstructs both canonical git_diff authority combinations byte-identically", async () => {
+  const candidates = [
+    { ...v2Envelope, children: [{ ...v2Envelope.children[0], effectiveTools: ["read", "grep", "find", "ls", "git_diff"] }] },
+    { ...v2Envelope, children: [{ index: 0, outcome: "succeeded", effectiveModel: "test/model", effectiveThinking: "high", effectiveTools: ["read", "grep", "find", "ls", "git_diff", "write_report"], report: { path: "artifacts/a.md", summary: "done" } }] },
+  ];
+
+  for (const candidate of candidates) {
+    const f = fixture([custom("pi-subagents-minimal:terminal", candidate)]); await f.start();
+    expect(f.active).toContain("delegation_control");
+    const result = await f.inspect();
+    expect(result.content[0].text).toBe(JSON.stringify({ envelope: candidate, diagnostics: [] }));
+    expect(f.appended[0]!.value.envelopeSha256).toBe(createHash("sha256").update(JSON.stringify(candidate)).digest("hex"));
+  }
 });
 
 test("rejects noncanonical or illegal v2 effective tool authority", async () => {
