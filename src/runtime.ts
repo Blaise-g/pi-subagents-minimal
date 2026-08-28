@@ -7,7 +7,7 @@ import { StringEnum, type Api, type Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { createReportWriter, validateReportPath, verifyReport, type ReportState } from "./report.ts";
 import { allocateTerminalEnvelope, terminalEnvelopeFeasible, terminalEnvelopeWithinLimits, type ChildError, type ChildOutcome, type TerminalEnvelope, type ThinkingLevel } from "./projection.ts";
-import { envelopeDigest, parseEnvelope, parseMarker } from "./persistence.ts";
+import { envelopeDigest, parseEnvelope, parseMarker, type PersistedTerminalEnvelope } from "./persistence.ts";
 
 export type { ThinkingLevel } from "./projection.ts";
 export type TaskSpecification = { agent: "investigation"; task: string; model?: string; thinking?: ThinkingLevel; reportPath?: string };
@@ -27,7 +27,7 @@ export const defaultRuntimeDependencies: RuntimeDependencies = {
 type HostDiagnostic = { stage: "cleanup" | "lifecycle" | "persistence"; code: string; message: string; at: string };
 type ResolvedTask = { task: TaskSpecification; modelName: string; thinking: ThinkingLevel; model: Model<Api> };
 type ChildState = { index: number; phase: "queued" | "setup" | "running" | "terminal"; resolved: ResolvedTask; outcome?: ChildOutcome; settling?: boolean; queueTimer?: unknown; cancel?: () => void; forceCancel?: () => Promise<void> };
-type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; children: ChildState[]; envelope?: TerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancellationAccepted: boolean; cancellationTimer?: unknown; cancel?: () => Promise<void>; finalize?: () => Promise<void> };
+type RecordState = { phase: "queued" | "running" | "cancelling" | "finalizing" | "terminal"; children: ChildState[]; envelope?: PersistedTerminalEnvelope; unread: boolean; diagnostics: HostDiagnostic[]; cancellationAccepted: boolean; cancellationTimer?: unknown; cancel?: () => Promise<void>; finalize?: () => Promise<void> };
 const compact = (value: unknown) => JSON.stringify(value); const textResult = (value: unknown) => ({ content: [{ type: "text" as const, text: compact(value) }], details: {} });
 const bytes = (value: string) => Buffer.byteLength(value, "utf8");
 function prefix(value: string, maximum: number) { if (bytes(value) <= maximum) return value; const data = Buffer.from(value); let end = maximum; while (end > 0 && (data[end]! & 0xc0) === 0x80) end--; return data.subarray(0, end).toString("utf8"); }
