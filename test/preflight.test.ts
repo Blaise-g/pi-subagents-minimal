@@ -27,12 +27,13 @@ const assertNoAdmission = (effects: ReturnType<typeof fixture>["effects"]) => ex
 
 describe("single Delegation preflight", () => {
   test.each([
-    [{ agent: "other", task: "x" }, "AGENT_UNKNOWN"],
-    [{ agent: "investigation", task: "" }, "INPUT_INVALID"],
-    [{ agent: "investigation", task: "🙂".repeat(4097) }, "INPUT_INVALID"],
-    [{ agent: "investigation", task: "x", model: "broken" }, "INPUT_INVALID"],
-    [{ agent: "investigation", task: "x", model: `${"p".repeat(255)}/m` }, "INPUT_INVALID"],
-    [{ agent: "investigation", task: "x", reportPath: "../escape.md" }, "REPORT_PATH_INVALID"],
+    [{ agent: "investigation", task: "x" }, "INPUT_INVALID"],
+    [{ task: "x", arbitrary: true }, "INPUT_INVALID"],
+    [{ task: "" }, "INPUT_INVALID"],
+    [{ task: "🙂".repeat(4097) }, "INPUT_INVALID"],
+    [{ task: "x", model: "broken" }, "INPUT_INVALID"],
+    [{ task: "x", model: `${"p".repeat(255)}/m` }, "INPUT_INVALID"],
+    [{ task: "x", reportPath: "../escape.md" }, "REPORT_PATH_INVALID"],
   ] as const)("rejects semantic input %# with %s", async (task, code) => {
     const { execute, effects } = fixture();
     await expect(execute(task)).rejects.toThrow(`[${code}]`);
@@ -42,7 +43,7 @@ describe("single Delegation preflight", () => {
   test("accepts the exact UTF-8 task and model byte boundaries", async () => {
     const provider = "p".repeat(253);
     const { execute, effects } = fixture({ model: { provider, id: "m", reasoning: true }, available: [{ provider, id: "m" }] });
-    const accepted = await execute({ agent: "investigation", task: "🙂".repeat(4096), model: `${provider}/m`, thinking: "off" }) as any;
+    const accepted = await execute({ task: "🙂".repeat(4096), model: `${provider}/m`, thinking: "off" }) as any;
     expect(JSON.parse(accepted.content[0].text).phase).toBe("queued");
     expect(effects.ids).toBe(1);
   });
@@ -53,20 +54,20 @@ describe("single Delegation preflight", () => {
     [{ provider: "test", id: "model", reasoning: false }, [{ provider: "test", id: "model" }], "THINKING_UNSUPPORTED"],
   ] as const)("sanitizes model preflight failures %#", async (model, available, code) => {
     const { execute, effects } = fixture({ model, available: [...available] });
-    await expect(execute({ agent: "investigation", task: "x" })).rejects.toThrow(`[${code}]`);
+    await expect(execute({ task: "x" })).rejects.toThrow(`[${code}]`);
     assertNoAdmission(effects);
   });
 
   test("rejects ephemeral parent state before allocating an id", async () => {
     const { execute, effects } = fixture({ persisted: false });
-    await expect(execute({ agent: "investigation", task: "x", thinking: "off" })).rejects.toThrow("[PARENT_SESSION_EPHEMERAL]");
+    await expect(execute({ task: "x", thinking: "off" })).rejects.toThrow("[PARENT_SESSION_EPHEMERAL]");
     assertNoAdmission(effects);
   });
 
   test("bounds preflight by caller abort", async () => {
     const controller = new AbortController();
     const { execute, effects } = fixture({ runtime: () => new Promise(() => {}) });
-    const pending = execute({ agent: "investigation", task: "x" }, controller.signal);
+    const pending = execute({ task: "x" }, controller.signal);
     controller.abort();
     await expect(pending).rejects.toThrow("[PREFLIGHT_TIMEOUT]");
     assertNoAdmission(effects);

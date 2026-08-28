@@ -1,13 +1,16 @@
 import { createHash } from "node:crypto";
-import type { ChildOutcome, TerminalEnvelope, ThinkingLevel } from "./projection.ts";
+import type { ChildError, ChildOutcome, EffectiveTool, ThinkingLevel, TruncationField } from "./projection.ts";
 
-export type EffectiveTool = "read" | "grep" | "find" | "ls" | "git_diff" | "write_report";
-export type PersistedChildOutcomeV2 = ChildOutcome & { effectiveTools: EffectiveTool[] };
-export type TerminalEnvelopeV2 = Omit<TerminalEnvelope, "schemaVersion" | "children"> & {
-  schemaVersion: 2;
-  children: PersistedChildOutcomeV2[];
+export type LegacyChildOutcome = Omit<ChildOutcome, "effectiveTools">;
+export type LegacyTerminalEnvelope = {
+  schemaVersion: 1; delegationId: string; outcome: "succeeded" | "partial" | "failed" | "timed_out" | "cancelled";
+  completedAt: string; taskCount: number; order: "input"; children: LegacyChildOutcome[];
 };
-export type PersistedTerminalEnvelope = TerminalEnvelope | TerminalEnvelopeV2;
+export type TerminalEnvelopeV2 = {
+  schemaVersion: 2; delegationId: string; outcome: "succeeded" | "partial" | "failed" | "timed_out" | "cancelled";
+  completedAt: string; taskCount: number; order: "input"; children: ChildOutcome[];
+};
+export type PersistedTerminalEnvelope = LegacyTerminalEnvelope | TerminalEnvelopeV2;
 
 const idPattern = /^d_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const timestampPattern = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
@@ -16,16 +19,14 @@ const childOutcomes = new Set(["succeeded", "failed", "timed_out", "cancelled"])
 const parentOutcomes = new Set(["succeeded", "partial", "failed", "timed_out", "cancelled"]);
 const legalEffectiveTools: readonly (readonly EffectiveTool[])[] = [
   ["read", "grep", "find", "ls"],
-  ["read", "grep", "find", "ls", "git_diff"],
   ["read", "grep", "find", "ls", "write_report"],
-  ["read", "grep", "find", "ls", "git_diff", "write_report"],
 ];
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const exactKeys = (value: Record<string, unknown>, required: string[], optional: string[] = []) => required.every((key) => key in value) && Object.keys(value).every((key) => required.includes(key) || optional.includes(key));
 export const validId = (value: unknown): value is string => typeof value === "string" && idPattern.test(value);
 export const validTimestamp = (value: unknown): value is string => typeof value === "string" && timestampPattern.test(value) && (() => { try { return new Date(value).toISOString() === value; } catch { return false; } })();
 
-function validChild(value: unknown, index: number, version: 1 | 2): value is ChildOutcome | PersistedChildOutcomeV2 {
+function validChild(value: unknown, index: number, version: 1 | 2): value is LegacyChildOutcome | ChildOutcome {
   const required = ["index", "outcome", "effectiveModel", "effectiveThinking", ...(version === 2 ? ["effectiveTools"] : [])];
   if (!object(value) || !exactKeys(value, required, ["result", "report", "partialResult", "error", "truncation"])) return false;
   if (value.index !== index || !childOutcomes.has(value.outcome as string) || typeof value.effectiveModel !== "string" || Buffer.byteLength(value.effectiveModel) > 256 || !thinking.has(value.effectiveThinking as ThinkingLevel)) return false;

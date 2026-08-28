@@ -38,14 +38,14 @@ test("the public Pi loader loads the extension and invalid config disables admis
   const { extension } = await loadExtensionHarness(resolve("src/index.ts"));
   expect([...extension.tools.keys()]).toEqual(["delegate"]);
   const delegate = extension.tools.get("delegate")!;
-  await expect(delegate.definition.execute("call", { mode: "single", task: { agent: "investigation", task: "x" } }, new AbortController().signal, undefined, {} as never))
+  await expect(delegate.definition.execute("call", { mode: "single", task: { task: "x" } }, new AbortController().signal, undefined, {} as never))
     .rejects.toThrow(/^\[CONFIG_INVALID\]/);
   expect(extension.handlers.get("session_start")).toBeUndefined();
 });
 
-test("packaged Investigation bytes equal the approved fixture", async () => {
+test("packaged Subagent bytes equal the approved fixture", async () => {
   const [agent, fixture] = await Promise.all([
-    readFile(resolve("agents/investigation.md")), readFile(resolve("test/fixtures/investigation.md")),
+    readFile(resolve("agents/subagent.md")), readFile(resolve("test/fixtures/subagent.md")),
   ]);
   expect(agent.equals(fixture)).toBe(true);
 });

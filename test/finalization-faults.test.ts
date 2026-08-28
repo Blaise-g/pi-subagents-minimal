@@ -22,7 +22,7 @@ function fixture(faults: { projection?: number; oversized?: number; append?: num
     createChild: async () => { childRuns++; let listener = (_event: any) => {}; const child = { messages: [] as any[], subscribe(fn: any) { listener = fn; return () => {}; }, async prompt() { listener({ type: "agent_start" }); child.messages.push({ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "immutable" }] }); }, async abort() {}, dispose() {} }; return child; },
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };
-  const launch = () => tools.get("delegate").execute("x", { mode: "single", task: { agent: "investigation", task: "work" } }, new AbortController().signal, undefined, ctx);
+  const launch = () => tools.get("delegate").execute("x", { mode: "single", task: { task: "work" } }, new AbortController().signal, undefined, ctx);
   const inspect = async () => JSON.parse((await tools.get("delegation_control").execute("x", { action: "inspect", delegationId: id })).content[0].text);
   return { launch, inspect, entries, messages, active, childRuns: () => childRuns, projectionCalls: () => projectionCalls };
 }

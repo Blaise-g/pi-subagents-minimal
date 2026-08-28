@@ -9,7 +9,6 @@ const NODE_MINIMUM = [22, 19, 0] as const;
 const thinking = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
 const task = Type.Object({
-  agent: Type.Literal("investigation"),
   task: Type.String(),
   model: Type.Optional(Type.String()),
   thinking: Type.Optional(StringEnum(thinking)),
@@ -79,7 +78,7 @@ export function createExtension(overrides: Partial<ExtensionDependencies> = {}) 
     pi.registerTool({
       name: "delegate",
       label: "Delegate",
-      description: "Start one isolated Investigation or a flat batch of independent Investigations in the background. Returns a Delegation id; use delegation_control to inspect or cancel.",
+      description: "Start one isolated Subagent or a flat batch of independent Subagents in the background. Returns a Delegation id; use delegation_control to inspect or cancel.",
       parameters: delegateParameters,
       async execute(_toolCallId, input, signal, _onUpdate, ctx) {
         if (configError !== undefined) throw new Error(configError);

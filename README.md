@@ -4,7 +4,7 @@ A deliberately narrow Pi extension for isolated, bounded repository analysis. It
 
 ## Status and canonical contract
 
-The installed `0.1.0` code is for local dogfooding. The approved [implementation contract](docs/spec/v1-implementation-contract.md) defines the upcoming `0.2.0` behavior; executable migration is tracked separately. The retained [proposal](docs/spec/v0.2-generic-subagent-capabilities-proposal.md) and [independent review](docs/spec/v0.2-generic-subagent-capabilities-review.md) are historical design evidence, not normative requirements.
+The installed `0.2.0` code is for local dogfooding against the approved [implementation contract](docs/spec/v1-implementation-contract.md). The retained [proposal](docs/spec/v0.2-generic-subagent-capabilities-proposal.md) and [independent review](docs/spec/v0.2-generic-subagent-capabilities-review.md) are historical design evidence, not normative requirements.
 
 ## Development install
 

@@ -6,7 +6,7 @@ import { createExtension } from "../src/index.ts";
 
 const waitUntil = async (predicate: () => boolean) => { for (let i = 0; i < 100; i++) { if (predicate()) return; await Bun.sleep(5); } throw new Error("condition not reached"); };
 
-test("gives a report Investigation only its closure-bound writer and projects path plus summary", async () => {
+test("gives a report Subagent only its closure-bound writer and projects path plus summary", async () => {
   const cwd = await mkdtemp(join(tmpdir(), "pi-report-runtime-"));
   try {
     const tools = new Map<string, any>();
@@ -31,10 +31,10 @@ test("gives a report Investigation only its closure-bound writer and projects pa
       },
     })({ registerTool: (tool: any) => tools.set(tool.name, tool), on() {}, getActiveTools: () => ["delegate"], setActiveTools() {}, appendEntry() {}, sendMessage() { completed = true; } } as never);
     const ctx = { cwd, model: { provider: "test", id: "model" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };
-    await tools.get("delegate").execute("call", { mode: "single", task: { agent: "investigation", task: "research", reportPath: "artifacts/evidence.md" } }, undefined, undefined, ctx);
+    await tools.get("delegate").execute("call", { mode: "single", task: { task: "research", reportPath: "artifacts/evidence.md" } }, undefined, undefined, ctx);
     await waitUntil(() => completed);
     expect(childTools?.map((tool) => tool.name)).toEqual(["write_report"]);
     const inspection = await tools.get("delegation_control").execute("call", { action: "inspect", delegationId: "d_report" });
-    expect(JSON.parse(inspection.content[0].text).envelope.children[0]).toMatchObject({ outcome: "succeeded", report: { path: "artifacts/evidence.md", summary: "Evidence gathered; artifacts/evidence.md" } });
+    expect(JSON.parse(inspection.content[0].text).envelope.children[0]).toMatchObject({ outcome: "succeeded", effectiveTools: ["read", "grep", "find", "ls", "write_report"], report: { path: "artifacts/evidence.md", summary: "Evidence gathered; artifacts/evidence.md" } });
   } finally { await rm(cwd, { recursive: true, force: true }); }
 });

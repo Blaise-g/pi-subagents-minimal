@@ -4,7 +4,7 @@
     "agent-bytes": {
       "kind": "deterministic",
       "file": "test/extension.test.ts",
-      "assertion": "packaged Investigation bytes equal the approved fixture"
+      "assertion": "packaged Subagent bytes equal the approved fixture"
     },
     "allocation-invariance": {
       "kind": "deterministic",
@@ -129,7 +129,7 @@
     "report-runtime": {
       "kind": "deterministic",
       "file": "test/report-runtime.test.ts",
-      "assertion": "gives a report Investigation only its closure-bound writer and projects path plus summary"
+      "assertion": "gives a report Subagent only its closure-bound writer and projects path plus summary"
     },
     "running-timeout": {
       "kind": "deterministic",
@@ -144,7 +144,7 @@
     "successful-lifecycle": {
       "kind": "deterministic",
       "file": "test/successful-single.test.ts",
-      "assertion": "runs an isolated Investigation and persists before notifying and consuming"
+      "assertion": "runs an isolated generic Subagent and persists v2 before notifying and consuming"
     },
     "typecheck": {
       "kind": "typecheck",
@@ -609,7 +609,7 @@
       ]
     },
     {
-      "assertion": "Exact Investigation ownership and no arbitrary Agent discovery",
+      "assertion": "One role-neutral Subagent definition, parent-owned Task roles, no Agent catalog",
       "evidence": [
         "agent-bytes",
         "report-runtime"
@@ -656,7 +656,7 @@
       ]
     },
     {
-      "assertion": "Local read-only Investigation, closure-bound Markdown report, preflight completeness, `triggerTurn: true`",
+      "assertion": "Base local inspection, selected bounded `git_diff`, closure-bound Markdown report, preflight completeness, `triggerTurn: true`",
       "evidence": [
         "report-runtime",
         "preflight",

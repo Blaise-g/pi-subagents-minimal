@@ -9,7 +9,7 @@ const waitUntil = async (predicate: () => boolean) => {
   throw new Error("condition not reached");
 };
 
-test("runs an isolated Investigation and persists before notifying and consuming", async () => {
+test("runs an isolated generic Subagent and persists v2 before notifying and consuming", async () => {
   const tools = new Map<string, { execute: (...args: never[]) => Promise<{ content: Array<{ text: string }>; details: unknown }> }>();
   const events: string[] = [];
   const active = ["delegate", "other_extension_tool"];
@@ -52,16 +52,18 @@ test("runs an isolated Investigation and persists before notifying and consuming
     cwd: "/repo", model: { provider: "test", id: "model" }, thinkingLevel: "high",
     sessionManager: { isPersisted: () => true, getSessionFile: () => "/session.jsonl" },
   };
-  const accepted = await tools.get("delegate")!.execute("call" as never, { mode: "single", task: { agent: "investigation", task: "inspect it" } } as never, new AbortController().signal as never, undefined as never, ctx as never);
+  const accepted = await tools.get("delegate")!.execute("call" as never, { mode: "single", task: { task: "inspect 🙂\nexact" } } as never, new AbortController().signal as never, undefined as never, ctx as never);
   expect(JSON.parse(accepted.content[0]!.text)).toEqual({ schemaVersion: 1, delegationId: "d_00000000-0000-4000-8000-000000000000", phase: "queued", taskCount: 1 });
   await waitUntil(() => events.some((event) => event.startsWith("notify:")));
-  expect(childRequest).toMatchObject({ cwd: "/repo", task: "inspect it", thinking: "high", agentDefinition: "EXACT AGENT" });
+  expect(childRequest).toMatchObject({ cwd: "/repo", task: "inspect 🙂\nexact", thinking: "high", agentDefinition: "EXACT AGENT", effectiveTools: ["read", "grep", "find", "ls"], customTools: [] });
+  expect(events).toContain('prompt:inspect 🙂\nexact:{"expandPromptTemplates":false}');
   expect(events.findIndex((event) => event === "persist:pi-subagents-minimal:terminal")).toBeLessThan(events.findIndex((event) => event.startsWith("notify:")));
   expect(active).toContain("other_extension_tool");
 
   const inspection = await tools.get("delegation_control")!.execute("call" as never, { action: "inspect", delegationId: "d_00000000-0000-4000-8000-000000000000" } as never, new AbortController().signal as never, undefined as never, ctx as never);
   const terminal = JSON.parse(inspection.content[0]!.text);
-  expect(terminal.envelope.children[0].result).toBe("bounded answer");
+  expect(terminal.envelope.schemaVersion).toBe(2);
+  expect(terminal.envelope.children[0]).toMatchObject({ result: "bounded answer", effectiveTools: ["read", "grep", "find", "ls"] });
   expect(inspection.details).toEqual({});
   expect(events).toContain("persist:pi-subagents-minimal:consumed");
   expect(active).toEqual(["delegate", "other_extension_tool"]);

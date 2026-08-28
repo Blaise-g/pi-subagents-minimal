@@ -1,4 +1,5 @@
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+export type EffectiveTool = "read" | "grep" | "find" | "ls" | "write_report";
 export type ChildError = { stage: "queue" | "setup" | "run" | "projection"; code: string; message: string };
 export type TruncationField = "result" | "report.summary" | "partialResult";
 export type ChildOutcome = {
@@ -6,6 +7,7 @@ export type ChildOutcome = {
   outcome: "succeeded" | "failed" | "timed_out" | "cancelled";
   effectiveModel: string;
   effectiveThinking: ThinkingLevel;
+  effectiveTools: EffectiveTool[];
   result?: string;
   report?: { path: string; summary: string };
   partialResult?: string;
@@ -13,7 +15,7 @@ export type ChildOutcome = {
   truncation?: { field: TruncationField; originalBytes: number; retainedBytes: number };
 };
 export type TerminalEnvelope = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   delegationId: string;
   outcome: "succeeded" | "partial" | "failed" | "timed_out" | "cancelled";
   completedAt: string;
@@ -40,7 +42,7 @@ function prefix(value: string, maximum: number): string {
 function project(child: ChildOutcome, waterline: number): ChildOutcome {
   const copy: ChildOutcome = {
     index: child.index, outcome: child.outcome, effectiveModel: child.effectiveModel,
-    effectiveThinking: child.effectiveThinking,
+    effectiveThinking: child.effectiveThinking, effectiveTools: [...child.effectiveTools],
     ...(child.error ? { error: { ...child.error } } : {}),
   };
   let field: TruncationField | undefined;

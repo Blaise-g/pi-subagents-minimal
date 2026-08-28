@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { loadExtensionHarness } from "./harness.ts";
 
 const approvedFiles = [
-  "LICENSE", "README.md", "agents/investigation.md", "package.json",
+  "LICENSE", "README.md", "agents/subagent.md", "package.json",
   "src/config.ts", "src/index.ts", "src/persistence.ts", "src/projection.ts",
   "src/report.ts", "src/runtime.ts",
 ];
