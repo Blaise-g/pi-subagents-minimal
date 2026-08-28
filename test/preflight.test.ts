@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { createExtension } from "../src/index.ts";
 
-function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: () => Promise<never>; persisted?: boolean } = {}) {
-  const effects = { ids: 0, children: 0, entries: 0, activations: 0 };
+function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: () => Promise<never>; persisted?: boolean; prepareGit?: () => Promise<any> } = {}) {
+  const effects = { ids: 0, children: 0, entries: 0, activations: 0, requests: [] as any[] };
   const tools = new Map<string, { execute: (...args: any[]) => Promise<unknown> }>();
   createExtension({
     piVersion: "0.84.3", nodeVersion: "22.19.0",
@@ -12,7 +12,8 @@ function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: 
         getModel: () => Object.hasOwn(overrides, "model") ? overrides.model : { provider: "test", id: "model", reasoning: true },
         getAvailable: async () => overrides.available ?? [{ provider: "test", id: "model" }],
       }) as never),
-      createChild: async () => { effects.children++; return { messages: [], subscribe: () => () => {}, prompt: () => new Promise<void>(() => {}), dispose() {}, abort: async () => {} }; },
+      prepareGit: overrides.prepareGit,
+      createChild: async (request) => { effects.children++; effects.requests.push(request); return { messages: [], subscribe: () => () => {}, prompt: () => new Promise<void>(() => {}), dispose() {}, abort: async () => {} }; },
     },
   })({
     registerTool: (tool: any) => tools.set(tool.name, tool), on() {}, getActiveTools: () => ["delegate"],
@@ -23,7 +24,7 @@ function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: 
   return { execute, effects };
 }
 
-const assertNoAdmission = (effects: ReturnType<typeof fixture>["effects"]) => expect(effects).toEqual({ ids: 0, children: 0, entries: 0, activations: 0 });
+const assertNoAdmission = (effects: ReturnType<typeof fixture>["effects"]) => expect(effects).toEqual({ ids: 0, children: 0, entries: 0, activations: 0, requests: [] });
 
 describe("single Delegation preflight", () => {
   test.each([
@@ -46,6 +47,25 @@ describe("single Delegation preflight", () => {
     const accepted = await execute({ task: "🙂".repeat(4096), model: `${provider}/m`, thinking: "off" }) as any;
     expect(JSON.parse(accepted.content[0].text).phase).toBe("queued");
     expect(effects.ids).toBe(1);
+  });
+
+  test("canonicalizes git_diff authority and prepares it before admission", async () => {
+    const boundary = {};
+    const { execute, effects } = fixture({ prepareGit: async () => boundary });
+    await execute({ task: "review", tools: ["git_diff", "git_diff"] });
+    await Bun.sleep(0);
+    expect(effects.ids).toBe(1);
+    expect(effects.requests[0].effectiveTools).toEqual(["read", "grep", "find", "ls", "git_diff"]);
+    expect(effects.requests[0].customTools.map((tool: any) => tool.name)).toEqual(["git_diff"]);
+  });
+
+  test("rejects unknown tools and unavailable Git without admission", async () => {
+    const unknown = fixture();
+    await expect(unknown.execute({ task: "review", tools: ["shell"] })).rejects.toThrow("[INPUT_INVALID]");
+    assertNoAdmission(unknown.effects);
+    const unavailable = fixture({ prepareGit: async () => { throw new Error("[GIT_REPOSITORY_UNAVAILABLE] unavailable"); } });
+    await expect(unavailable.execute({ task: "review", tools: ["git_diff"] })).rejects.toThrow("[GIT_REPOSITORY_UNAVAILABLE]");
+    assertNoAdmission(unavailable.effects);
   });
 
   test.each([

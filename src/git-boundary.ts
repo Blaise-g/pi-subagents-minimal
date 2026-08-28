@@ -42,7 +42,7 @@ async function invoke(cwd: string, command: readonly string[], options: Required
   return await new Promise((resolvePromise, reject) => {
     let settled = false, overflow = false; const stdout: Buffer[] = [], stderr: Buffer[] = []; let outBytes = 0, errBytes = 0;
     let child;
-    try { child = spawn("git", [...fixedConfig, "--no-optional-locks", ...command], { cwd, env: environment(), shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] }); }
+    try { child = spawn("git", [...fixedConfig, "--no-optional-locks", ...command], { cwd, env: environment(), shell: false, windowsHide: true, stdio: ["pipe", "pipe", "pipe"] }); child.stdin.end(); }
     catch { reject(new GitBoundaryError("GIT_UNAVAILABLE", "A supported Git executable is unavailable")); return; }
     const finishError = (error: GitBoundaryError) => { if (settled) return; settled = true; clearTimeout(timer); reject(error); };
     const collect = (chunks: Buffer[], count: number, chunk: Buffer) => { const next = count + chunk.length; if (next > options.maxOutputBytes) { overflow = true; child.kill(); } else chunks.push(chunk); return next; };
@@ -57,15 +57,23 @@ async function confined(root: string, path: string) {
   const absolute = resolve(root, ...path.split("/")); const lexical = relative(root, absolute); if (lexical.startsWith(`..${sep}`) || lexical === ".." || parse(lexical).root) throw new GitBoundaryError("GIT_INPUT_INVALID", "Path escapes the repository");
   let cursor = absolute; while (true) { try { const canonical = await realpath(cursor); const rel = relative(root, canonical); if (rel === ".." || rel.startsWith(`..${sep}`) || parse(rel).root) throw new GitBoundaryError("GIT_INPUT_INVALID", "Path resolves outside the repository"); return; } catch (error) { if (error instanceof GitBoundaryError) throw error; const parent = dirname(cursor); if (parent === cursor) throw new GitBoundaryError("GIT_INPUT_INVALID", "Path boundary could not be established"); cursor = parent; } }
 }
+export type GitBoundary = Awaited<ReturnType<typeof createGitBoundary>>;
+
 export async function createGitBoundary(cwd: string, supplied: BoundaryOptions = {}) {
   const options = { timeoutMs: supplied.timeoutMs ?? DEFAULT_TIMEOUT, maxOutputBytes: supplied.maxOutputBytes ?? DEFAULT_OUTPUT };
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1 || !Number.isInteger(options.maxOutputBytes) || options.maxOutputBytes < 1) throw new GitBoundaryError("GIT_INPUT_INVALID", "Invalid process bounds");
   const marker = await nearestMarker(cwd); const probe = await invoke(marker, ["rev-parse", "--show-toplevel"], options); const line = probe.stdout.trim();
   if (!line || line.includes("\n") || !isAbsolute(line)) throw new GitBoundaryError("GIT_OUTPUT_INVALID", "Git returned an invalid repository root");
   const root = await realpath(line); const markerRelative = relative(root, marker); if (markerRelative === ".." || markerRelative.startsWith(`..${sep}`)) throw new GitBoundaryError("GIT_OUTPUT_INVALID", "Git repository root did not contain the discovered working directory");
+  const requireCommit = (commit: string) => { if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new GitBoundaryError("GIT_INPUT_INVALID", "Diff base must be a resolved commit identity"); };
   return {
     root,
     async resolveCommit(fixedPoint: string) { const fixed = validateFixedPoint(fixedPoint); const result = await invoke(root, ["rev-parse", "--verify", "--end-of-options", `${fixed}^{commit}`], options); const commit = result.stdout.trim(); if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new GitBoundaryError("GIT_OUTPUT_INVALID", "Git returned an invalid commit identity"); return commit; },
-    async diff(baseCommit: string, path?: string) { if (!/^[0-9a-f]{40,64}$/.test(baseCommit)) throw new GitBoundaryError("GIT_INPUT_INVALID", "Diff base must be a resolved commit identity"); const args = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--find-renames", "--unified=3", baseCommit]; if (path !== undefined) { const literal = validateLiteralPath(path); await confined(root, literal); args.push("--", literal); } else args.push("--"); return invoke(root, args, options); },
+    async head() { try { return await this.resolveCommit("HEAD"); } catch (error) { if (error instanceof GitBoundaryError && error.code === "GIT_PROCESS_FAILED") return undefined; throw error; } },
+    async emptyTree() { const result = await invoke(root, ["hash-object", "-t", "tree", "--stdin"], options); const commit = result.stdout.trim(); if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new GitBoundaryError("GIT_OUTPUT_INVALID", "Git returned an invalid empty-tree identity"); return commit; },
+    async nameStatus(baseCommit: string) { requireCommit(baseCommit); return invoke(root, ["diff", "--name-status", "--find-renames", baseCommit, "--"], options); },
+    async numstat(baseCommit: string) { requireCommit(baseCommit); return invoke(root, ["diff", "--numstat", "--find-renames", baseCommit, "--"], options); },
+    async untracked() { return invoke(root, ["ls-files", "--others", "--exclude-standard"], options); },
+    async diff(baseCommit: string, path?: string) { requireCommit(baseCommit); const args = ["diff", "--no-ext-diff", "--no-textconv", "--no-color", "--find-renames", "--unified=3", baseCommit]; if (path !== undefined) { const literal = validateLiteralPath(path); await confined(root, literal); args.push("--", literal); } else args.push("--"); return invoke(root, args, options); },
   };
 }

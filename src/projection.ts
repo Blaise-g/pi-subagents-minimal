@@ -1,5 +1,5 @@
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
-export type EffectiveTool = "read" | "grep" | "find" | "ls" | "write_report";
+export type EffectiveTool = "read" | "grep" | "find" | "ls" | "git_diff" | "write_report";
 export type ChildError = { stage: "queue" | "setup" | "run" | "projection"; code: string; message: string };
 export type TruncationField = "result" | "report.summary" | "partialResult";
 export type ChildOutcome = {

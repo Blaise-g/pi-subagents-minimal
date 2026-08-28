@@ -12,6 +12,7 @@ const task = Type.Object({
   task: Type.String(),
   model: Type.Optional(Type.String()),
   thinking: Type.Optional(StringEnum(thinking)),
+  tools: Type.Optional(Type.Array(StringEnum(["git_diff"] as const))),
   reportPath: Type.Optional(Type.String()),
 }, { additionalProperties: false });
 
