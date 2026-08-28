@@ -13,7 +13,7 @@ function fixture(concurrency = 2, queueTimeoutMs?: number) {
     createChild: async (request) => { active++; maximum = Math.max(maximum, active); let listener = (_event: any) => {}; let resolve!: () => void; const promise = new Promise<void>((r) => { resolve = r; }); const child = { messages: [] as any[], subscribe(fn: any) { listener = fn; return () => {}; }, async prompt() { listener({ type: "agent_start" }); await promise; }, dispose() { active--; }, async abort() {} }; pending.push({ task: request.task, child, resolve }); return child; },
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };
-  const execute = (tasks: string[]) => tools.get("delegate").execute("x", { mode: "batch", tasks: tasks.map((task) => ({ agent: "investigation", task })) }, new AbortController().signal, undefined, ctx);
+  const execute = (tasks: string[]) => tools.get("delegate").execute("x", { mode: "batch", tasks: tasks.map((task) => ({ task })) }, new AbortController().signal, undefined, ctx);
   const complete = (task: string, text = task, stopReason = "stop") => { const item = pending.find((x) => x.task === task)!; item.child.messages.push({ role: "assistant", stopReason, content: [{ type: "text", text }] }); item.resolve(); };
   return { execute, complete, pending, entries, tools, ctx, maximum };
 }

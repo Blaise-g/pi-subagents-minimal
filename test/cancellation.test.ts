@@ -14,7 +14,7 @@ function fixture() {
     createChild: async (request) => { let listener = (_: any) => {}; let resolve!: () => void; const done = new Promise<void>((r) => resolve = r); let abortResolve!: () => void; const aborted = new Promise<void>((r) => abortResolve = r); const child = { messages: [] as any[], disposed: 0, aborts: 0, subscribe(fn: any) { listener = fn; return () => {}; }, async prompt() { listener({ type: "agent_start" }); await done; }, async abort() { child.aborts++; await aborted; }, dispose() { child.disposed++; } }; pending.push({ task: request.task, child, resolve, abortResolve }); return child; },
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };
-  const launch = async (tasks: string[]) => JSON.parse((await tools.get("delegate").execute("x", { mode: "batch", tasks: tasks.map(task => ({ agent: "investigation", task })) }, new AbortController().signal, undefined, ctx)).content[0].text).delegationId;
+  const launch = async (tasks: string[]) => JSON.parse((await tools.get("delegate").execute("x", { mode: "batch", tasks: tasks.map(task => ({ task })) }, new AbortController().signal, undefined, ctx)).content[0].text).delegationId;
   const control = async (id: string, action = "cancel") => JSON.parse((await tools.get("delegation_control").execute("x", { action, delegationId: id })).content[0].text);
   const advance = async (ms: number) => { now += ms; for (const timer of timers.filter(t => !t.cleared && t.at <= now)) { timer.cleared = true; timer.fn(); } await tick(); };
   return { launch, control, advance, pending, entries };

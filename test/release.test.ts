@@ -5,6 +5,7 @@ import {
   buildReleaseRecord,
   validateEvidenceInventory,
   validateReleaseIdentity,
+  smoke,
   type EvidenceInventory,
 } from "../tools/release.js";
 
@@ -68,6 +69,27 @@ describe("release qualification", () => {
     expect(Object.keys(record).sort()).toEqual(["package", "qualifications", "schemaVersion", "source", "tarball", "workflow"]);
   });
 
+  test("the public package loader smoke accepts exactly the two package tools", async () => {
+    await expect(smoke(resolve(root, "src/index.ts"))).resolves.toBeUndefined();
+  });
+
+  test("records the 0.2.0 dogfood qualification without a publication or model-quality claim", async () => {
+    const record = JSON.parse(await readFile(resolve(root, "docs/dogfood-qualification.json"), "utf8"));
+    expect(record).toMatchObject({
+      schemaVersion: 1,
+      packageVersion: "0.2.0",
+      changeClassification: "significant",
+      modelEvaluation: { collected: false, kind: "none" },
+    });
+    expect(record.externalWorkflows).toEqual([
+      { name: "code-review-diff", version: "0.2.0", evidence: "test/review-workflows.test.ts" },
+      { name: "code-simplify", version: "0.2.0", evidence: "test/review-workflows.test.ts" },
+    ]);
+    expect(record.claims).toContain("deterministic-dogfood-candidate");
+    expect(record.claims).not.toContain("stable-publication");
+    expect(record.claims).not.toContain("general-model-quality");
+  });
+
   test("the publish workflow makes provenance publication depend on every release gate", async () => {
     const workflow = await readFile(resolve(root, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("workflow_dispatch:");
@@ -87,6 +109,9 @@ describe("release qualification", () => {
     const qualification = await readFile(resolve(root, ".github/workflows/qualification.yml"), "utf8");
     expect(qualification).toContain('PACKAGE_VERSION=$(node -p "require(\'./package.json\').version")');
     expect(qualification).not.toContain("p.version!=='1.0.0'");
+    expect(qualification).toContain("bun test test/git-boundary.test.ts test/git-diff.test.ts");
+    expect(qualification).toContain("Fresh local candidate pi install");
+    expect(qualification).toContain('pi" install -l "$PACKAGE_ROOT"');
 
     const publish = workflow.indexOf("npm publish --provenance --access public");
     expect(publish).toBeGreaterThan(workflow.indexOf("Fresh exact-version candidate install"));

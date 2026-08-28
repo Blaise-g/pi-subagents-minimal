@@ -29,7 +29,7 @@ function fixture(runTimeoutMs = 1_000) {
       createChild: async () => child,
     },
   })(pi as never);
-  const execute = () => tools.get("delegate").execute("x", { mode: "single", task: { agent: "investigation", task: "task" } }, new AbortController().signal, undefined, { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } });
+  const execute = () => tools.get("delegate").execute("x", { mode: "single", task: { task: "task" } }, new AbortController().signal, undefined, { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } });
   return { tools, entries, child, execute, start: () => listener({ type: "agent_start" }), fire: () => timer?.() };
 }
 

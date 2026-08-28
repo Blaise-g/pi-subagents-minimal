@@ -27,7 +27,7 @@ test("shutdown uses one grace deadline, rejects admission, persists cancellation
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true, getBranch: () => [] } };
   await handlers.get("session_start")({}, ctx);
-  const launch = (task: string) => tools.get("delegate").execute("x", { mode: "single", task: { agent: "investigation", task } }, new AbortController().signal, undefined, ctx);
+  const launch = (task: string) => tools.get("delegate").execute("x", { mode: "single", task: { task } }, new AbortController().signal, undefined, ctx);
 
   await launch("done"); await waitUntil(() => entries.some((entry) => entry.type.endsWith(":terminal")));
   await launch("live"); await waitUntil(() => live.aborts === 0 && timers.size > 0);

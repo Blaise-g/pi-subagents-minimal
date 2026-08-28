@@ -4,7 +4,7 @@
     "agent-bytes": {
       "kind": "deterministic",
       "file": "test/extension.test.ts",
-      "assertion": "packaged Investigation bytes equal the approved fixture"
+      "assertion": "packaged Subagent bytes equal the approved fixture"
     },
     "allocation-invariance": {
       "kind": "deterministic",
@@ -129,7 +129,7 @@
     "report-runtime": {
       "kind": "deterministic",
       "file": "test/report-runtime.test.ts",
-      "assertion": "gives a report Investigation only its closure-bound writer and projects path plus summary"
+      "assertion": "gives a report Subagent only its closure-bound writer and projects path plus summary"
     },
     "running-timeout": {
       "kind": "deterministic",
@@ -144,7 +144,7 @@
     "successful-lifecycle": {
       "kind": "deterministic",
       "file": "test/successful-single.test.ts",
-      "assertion": "runs an isolated Investigation and persists before notifying and consuming"
+      "assertion": "runs an isolated generic Subagent and persists v2 before notifying and consuming"
     },
     "typecheck": {
       "kind": "typecheck",
@@ -155,6 +155,26 @@
       "kind": "deterministic",
       "file": "test/cancellation.test.ts",
       "assertion": "unknown Delegation ids return a sanitized error"
+    },
+    "git-process-boundary": {
+      "kind": "deterministic",
+      "file": "test/git-boundary.test.ts",
+      "assertion": "guarded Git process boundary"
+    },
+    "git-semantics-bounds": {
+      "kind": "deterministic",
+      "file": "test/git-diff.test.ts",
+      "assertion": "literal path filtering includes both rename endpoints and exact UTF-8 truncation metadata"
+    },
+    "dogfood-qualification": {
+      "kind": "release",
+      "file": "docs/dogfood-qualification.json",
+      "assertion": "deterministic-dogfood-candidate"
+    },
+    "review-workflows": {
+      "kind": "deterministic",
+      "file": "test/review-workflows.test.ts",
+      "assertion": "versioned parent review skills use independent strict 0.2.0 Tasks"
     }
   },
   "contractSections": [
@@ -408,7 +428,8 @@
         "recovery",
         "cancellation",
         "finalization-faults",
-        "shutdown"
+        "shutdown",
+        "review-workflows"
       ]
     },
     {
@@ -423,13 +444,20 @@
       "evidence": [
         "release-workflow",
         "packed-artifact",
-        "context-payload-budget"
+        "context-payload-budget",
+        "dogfood-qualification"
       ]
     },
     {
       "section": "15",
       "evidence": [
         "evidence-inventory"
+      ]
+    },
+    {
+      "section": "7.2",
+      "evidence": [
+        "git-process-boundary"
       ]
     }
   ],
@@ -526,6 +554,34 @@
         "branch-semantics",
         "malformed-persistence"
       ]
+    },
+    {
+      "case": "Git semantics",
+      "evidence": [
+        "git-process-boundary",
+        "git-semantics-bounds"
+      ]
+    },
+    {
+      "case": "Git bounds",
+      "evidence": [
+        "git-process-boundary",
+        "git-semantics-bounds"
+      ]
+    },
+    {
+      "case": "Git process safety",
+      "evidence": [
+        "git-process-boundary"
+      ]
+    },
+    {
+      "case": "Prompt and package",
+      "evidence": [
+        "agent-bytes",
+        "packed-artifact",
+        "review-workflows"
+      ]
     }
   ],
   "packedReleaseGates": [
@@ -609,7 +665,7 @@
       ]
     },
     {
-      "assertion": "Exact Investigation ownership and no arbitrary Agent discovery",
+      "assertion": "One role-neutral Subagent definition, parent-owned Task roles, no Agent catalog",
       "evidence": [
         "agent-bytes",
         "report-runtime"
@@ -656,11 +712,12 @@
       ]
     },
     {
-      "assertion": "Local read-only Investigation, closure-bound Markdown report, preflight completeness, `triggerTurn: true`",
+      "assertion": "Base local inspection, selected bounded `git_diff`, closure-bound Markdown report, preflight completeness, `triggerTurn: true`",
       "evidence": [
         "report-runtime",
         "preflight",
-        "notification-fault"
+        "notification-fault",
+        "review-workflows"
       ]
     },
     {
@@ -675,6 +732,14 @@
       "assertion": "Exact schemas, config, entries, envelopes, codes, paths, transitions, and evidence map",
       "evidence": [
         "evidence-inventory"
+      ]
+    },
+    {
+      "assertion": "Closed additions-only Task tools, canonical effective tools, v2 envelopes, exact legacy v1 persistence",
+      "evidence": [
+        "preflight",
+        "recovery",
+        "successful-lifecycle"
       ]
     }
   ]

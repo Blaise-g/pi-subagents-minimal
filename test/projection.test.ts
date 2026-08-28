@@ -3,7 +3,7 @@ import { allocateTerminalEnvelope, terminalEnvelopeFeasible, type ChildOutcome, 
 
 const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value), "utf8");
 const base = (children: ChildOutcome[]): Omit<TerminalEnvelope, "children"> => ({
-  schemaVersion: 1, delegationId: "d_test", outcome: children.every((child) => child.outcome === "succeeded") ? "succeeded" : "failed",
+  schemaVersion: 2, delegationId: "d_test", outcome: children.every((child) => child.outcome === "succeeded") ? "succeeded" : "failed",
   completedAt: "2026-01-02T03:04:05.000Z", taskCount: children.length, order: "input",
 });
 
@@ -44,9 +44,9 @@ test("canonical allocator matches an independent Unicode waterline model", () =>
   for (let seed = 8; seed <= 8; seed++) {
     const text = `${"é".repeat(seed * 500)}${"🙂".repeat(seed * 150)}${"x".repeat(seed * 600)}`;
     const children: ChildOutcome[] = [
-      { index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", result: text },
-      { index: 1, outcome: "failed", effectiveModel: "p/m", effectiveThinking: "high", partialResult: text, error: { stage: "run", code: "RUN_FAILED", message: "failed" } },
-      { index: 2, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "low", report: { path: `artifacts/${"界".repeat(seed)}.md`, summary: text } },
+      { index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", effectiveTools: ["read", "grep", "find", "ls"], result: text },
+      { index: 1, outcome: "failed", effectiveModel: "p/m", effectiveThinking: "high", effectiveTools: ["read", "grep", "find", "ls"], partialResult: text, error: { stage: "run", code: "RUN_FAILED", message: "failed" } },
+      { index: 2, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "low", effectiveTools: ["read", "grep", "find", "ls"], report: { path: `artifacts/${"界".repeat(seed)}.md`, summary: text } },
     ];
     const expected = reference(children);
     expect(allocateTerminalEnvelope(base(children), children)).toEqual(expected);
@@ -57,8 +57,8 @@ test("canonical allocator matches an independent Unicode waterline model", () =>
 test("allocation is permutation-independent and protects complete report paths", () => {
   const text = "🙂".repeat(7000);
   const children: ChildOutcome[] = [
-    { index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", result: text },
-    { index: 1, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", report: { path: `artifacts/${"é".repeat(400)}.md`, summary: text } },
+    { index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", effectiveTools: ["read", "grep", "find", "ls"], result: text },
+    { index: 1, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", effectiveTools: ["read", "grep", "find", "ls"], report: { path: `artifacts/${"é".repeat(400)}.md`, summary: text } },
   ];
   const first = allocateTerminalEnvelope(base(children), children);
   const reversedInput = [...children].reverse().map((child, index) => ({ ...child, index }));
@@ -70,8 +70,8 @@ test("allocation is permutation-independent and protects complete report paths",
 
 test("individual caps are exact and truncation metadata describes actual retained UTF-8 bytes", () => {
   const children: ChildOutcome[] = [
-    { index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", result: "x".repeat(16 * 1024 + 1) },
-    { index: 1, outcome: "failed", effectiveModel: "p/m", effectiveThinking: "off", partialResult: "é".repeat(4 * 1024), error: { stage: "run", code: "RUN_FAILED", message: "failed" } },
+    { index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", effectiveTools: ["read", "grep", "find", "ls"], result: "x".repeat(16 * 1024 + 1) },
+    { index: 1, outcome: "failed", effectiveModel: "p/m", effectiveThinking: "off", effectiveTools: ["read", "grep", "find", "ls"], partialResult: "é".repeat(4 * 1024), error: { stage: "run", code: "RUN_FAILED", message: "failed" } },
   ];
   const envelope = allocateTerminalEnvelope(base(children), children);
   expect(Buffer.byteLength(envelope.children[0]!.result!)).toBe(16 * 1024);
@@ -81,5 +81,5 @@ test("individual caps are exact and truncation metadata describes actual retaine
 });
 
 test("feasibility reserves protected metadata without model output", () => {
-  expect(terminalEnvelopeFeasible(base([]), [{ index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", report: { path: `artifacts/${"x".repeat(25 * 1024)}.md`, summary: "" } }])).toBe(false);
+  expect(terminalEnvelopeFeasible(base([]), [{ index: 0, outcome: "succeeded", effectiveModel: "p/m", effectiveThinking: "off", effectiveTools: ["read", "grep", "find", "ls"], report: { path: `artifacts/${"x".repeat(25 * 1024)}.md`, summary: "" } }])).toBe(false);
 });

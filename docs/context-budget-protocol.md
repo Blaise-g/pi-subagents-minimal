@@ -22,4 +22,4 @@ The recorder must save compact `JSON.stringify(event.payload.tools)` from `befor
 
 The deterministic CI test reconstructs compact provider-facing tool JSON from registered names, descriptions, and schemas. It separately reports launch-only, control-only, both-active, and prompt-character gates. A value above an absolute ceiling fails. Growth above 10% fails until `baseline` is updated in a reviewed change with its justification; ceilings must never be changed as part of a baseline update. Provider measurements are deliberately recorded and reviewed separately because they require provider credentials and are model-specific.
 
-The launch and control registrations are also checked for absent `promptSnippet` and `promptGuidelines`; the package's `agents/investigation.md` text is child-only and the committed parent prompt addition is empty.
+The launch and control registrations are also checked for absent `promptSnippet` and `promptGuidelines`; the package's `agents/subagent.md` text is child-only and the committed parent prompt addition is empty.

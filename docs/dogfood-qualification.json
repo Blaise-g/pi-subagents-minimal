@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "packageVersion": "0.2.0",
+  "changeClassification": "significant",
+  "claims": [
+    "deterministic-dogfood-candidate"
+  ],
+  "modelEvaluation": {
+    "collected": false,
+    "kind": "none",
+    "rationale": "No unresolved model-behavior question justified a provider-backed Quality smoke or Recorded evaluation. Deterministic qualification makes no general model-quality claim."
+  },
+  "externalWorkflows": [
+    {
+      "name": "code-review-diff",
+      "version": "0.2.0",
+      "evidence": "test/review-workflows.test.ts"
+    },
+    {
+      "name": "code-simplify",
+      "version": "0.2.0",
+      "evidence": "test/review-workflows.test.ts"
+    }
+  ],
+  "contextMeasurement": {
+    "protocol": "docs/context-budget-protocol.md",
+    "deterministic": {
+      "launchOnlyBytes": 1190,
+      "controlOnlyBytes": 354,
+      "bothActiveBytes": 1543,
+      "addedPromptChars": 0
+    },
+    "baselineChange": "The generic Task schema and git_diff selector increased launch-only from 1174 to 1190 bytes and both-active from 1527 to 1543 bytes; control-only and prompt text are unchanged. Growth is below the reviewed 10% drift limit and all hard ceilings.",
+    "providerRecalibration": "not-required",
+    "providerRationale": "The deterministic growth is below the drift threshold; no provider-backed recalibration was necessary for this dogfood candidate. Existing two-repetition measurements remain supporting, non-release evidence."
+  },
+  "qualification": {
+    "inventory": "bun run release:verify",
+    "typecheck": "bun run typecheck",
+    "suite": "bun test",
+    "packedAndPlatform": ".github/workflows/qualification.yml"
+  }
+}

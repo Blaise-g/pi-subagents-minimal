@@ -1,6 +1,6 @@
 # Releasing an exact version
 
-`pi-subagents-minimal` is currently versioned below `1.0.0` for local iteration. Local path installation is documented in the README and does not use this procedure.
+`pi-subagents-minimal` is currently versioned below `1.0.0` for local iteration. Local path installation is documented in the README and does not use this procedure. The `0.2.0` deterministic dogfood qualification is recorded separately in [`dogfood-qualification.json`](dogfood-qualification.json); it is neither a stable publication record nor a model-quality claim.
 
 A public package version is published only by `.github/workflows/release.yml`. A local `npm publish` is not a release path. For the planned stable release, first set the package version to `1.0.0` in a reviewed commit, then follow every step below.
 
@@ -18,4 +18,4 @@ Before publishing it verifies exact version/tag/commit identity, source and life
 
 After publication, the workflow performs a fresh exact-version `pi install`, repeats the packed smoke check, and attaches the tarball, digest, and release record to the immutable GitHub tag release. The record contains package identity, source commit and tag, tarball digest, sorted exact Pi/Node/Bun qualification environments, and workflow identity. It does not certify model-output quality; any model evaluation is separate supporting material and is not a publication gate.
 
-The machine-checked assertion inventory is `docs/release-evidence.json`. It maps every canonical contract section, all 14 deterministic lifecycle cases, all packed release gates, and every section 15 change-to-evidence assertion to named evidence.
+The machine-checked assertion inventory is `docs/release-evidence.json`. It maps every canonical contract section, all 18 deterministic lifecycle cases, all packed release gates, and every section 15 change-to-evidence assertion to named evidence.
