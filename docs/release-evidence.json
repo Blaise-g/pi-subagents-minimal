@@ -160,6 +160,11 @@
       "kind": "deterministic",
       "file": "test/git-boundary.test.ts",
       "assertion": "guarded Git process boundary"
+    },
+    "review-workflows": {
+      "kind": "deterministic",
+      "file": "test/review-workflows.test.ts",
+      "assertion": "versioned parent review skills use independent strict 0.2.0 Tasks"
     }
   },
   "contractSections": [
@@ -413,7 +418,8 @@
         "recovery",
         "cancellation",
         "finalization-faults",
-        "shutdown"
+        "shutdown",
+        "review-workflows"
       ]
     },
     {
@@ -560,7 +566,8 @@
       "case": "Prompt and package",
       "evidence": [
         "agent-bytes",
-        "packed-artifact"
+        "packed-artifact",
+        "review-workflows"
       ]
     }
   ],
@@ -696,7 +703,8 @@
       "evidence": [
         "report-runtime",
         "preflight",
-        "notification-fault"
+        "notification-fault",
+        "review-workflows"
       ]
     },
     {
