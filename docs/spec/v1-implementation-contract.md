@@ -97,7 +97,7 @@ Limits:
 - `single`: exactly one child.
 - `batch`: 2–8 children.
 
-Both Task and tool-input objects are strict (`additionalProperties: false`). The tool has no cwd, deadline, arbitrary system prompt, Agent selector, Agent discovery, or arbitrary capability argument. `tools` is additions-only: omission and `[]` are equivalent, repeated legal names are deduplicated idempotently, and any unknown name fails before admission. Missing model and Thinking fields independently inherit the Orchestrator values captured at preflight. Unsupported or unauthenticated combinations fail; values are never clamped or substituted. The exact Unicode `task` bytes become the child user message unchanged, with skill and prompt-template expansion disabled.
+Both Task and tool-input objects are strict (`additionalProperties: false`). The tool has no cwd, deadline, arbitrary system prompt, Agent selector, Agent discovery, or arbitrary capability argument. `tools` is additions-only: omission and `[]` are equivalent, repeated legal names are deduplicated idempotently, and any unknown name fails before admission. Missing model and Thinking fields independently default to `openai-codex/gpt-5.6-luna` and `high`, respectively. Explicit Task values override these defaults. Unsupported or unauthenticated combinations fail; values are never clamped or substituted. The exact Unicode `task` bytes become the child user message unchanged, with skill and prompt-template expansion disabled.
 
 After whole-request preflight, successful execution returns compact JSON in `content` and `{}` in `details`:
 

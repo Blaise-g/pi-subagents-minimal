@@ -9,7 +9,7 @@ function fixture(concurrency = 2, queueTimeoutMs?: number) {
   const pi = { registerTool(tool: any) { tools.set(tool.name, tool); }, on() {}, getActiveTools: () => ["delegate"], setActiveTools() {}, appendEntry(type: string, value: unknown) { entries.push({ type, value }); }, sendMessage() {} };
   createExtension({ piVersion: "0.84.3", nodeVersion: "22.19.0", env: { PI_SUBAGENTS_MINIMAL_CONCURRENCY: String(concurrency), ...(queueTimeoutMs ? { PI_SUBAGENTS_MINIMAL_QUEUE_TIMEOUT_MS: String(queueTimeoutMs) } : {}) }, runtime: {
     id: () => `d_${++ids}`, now: () => new Date("2026-01-02T03:04:05.000Z"), loadAgent: async () => "agent",
-    createModelRuntime: async () => ({ getModel: () => ({ provider: "p", id: "m", reasoning: true }), getAvailable: async () => [{ provider: "p", id: "m" }] }) as never,
+    createModelRuntime: async () => ({ getModel: () => ({ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: true }), getAvailable: async () => [{ provider: "openai-codex", id: "gpt-5.6-luna" }] }) as never,
     createChild: async (request) => { active++; maximum = Math.max(maximum, active); let listener = (_event: any) => {}; let resolve!: () => void; const promise = new Promise<void>((r) => { resolve = r; }); const child = { messages: [] as any[], subscribe(fn: any) { listener = fn; return () => {}; }, async prompt() { listener({ type: "agent_start" }); await promise; }, dispose() { active--; }, async abort() {} }; pending.push({ task: request.task, child, resolve }); return child; },
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };

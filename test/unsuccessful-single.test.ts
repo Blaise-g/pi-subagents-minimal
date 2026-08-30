@@ -25,7 +25,7 @@ function fixture(runTimeoutMs = 1_000) {
     runtime: {
       id: () => "d_test", now: () => new Date("2026-01-02T03:04:05.000Z"), monotonicNow: () => 0,
       setTimer(fn: () => void) { timer = fn; return 1; }, clearTimer() {},
-      loadAgent: async () => "agent", createModelRuntime: async () => ({ getModel: () => ({ provider: "p", id: "m", reasoning: true }), getAvailable: async () => [{ provider: "p", id: "m" }] }) as never,
+      loadAgent: async () => "agent", createModelRuntime: async () => ({ getModel: () => ({ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: true }), getAvailable: async () => [{ provider: "openai-codex", id: "gpt-5.6-luna" }] }) as never,
       createChild: async () => child,
     },
   })(pi as never);

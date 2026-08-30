@@ -79,7 +79,11 @@ describe("release qualification", () => {
       schemaVersion: 1,
       packageVersion: "0.2.0",
       changeClassification: "significant",
-      modelEvaluation: { collected: false, kind: "none" },
+      modelEvaluation: {
+        collected: true,
+        kind: "recorded",
+        evidence: "../artifacts/matched-model-thinking-recorded-evaluation.md",
+      },
     });
     expect(record.externalWorkflows).toEqual([
       { name: "code-review-diff", version: "0.2.0", evidence: "test/review-workflows.test.ts" },

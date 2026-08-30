@@ -18,7 +18,7 @@ function fixture(faults: { projection?: number; oversized?: number; append?: num
   createExtension({ piVersion: "0.84.3", nodeVersion: "22.19.0", runtime: {
     id: () => id, now: () => new Date("2026-01-02T03:04:05.000Z"), loadAgent: async () => "agent",
     projectTerminalEnvelope(base, outcomes) { projectionCalls++; if ((faults.projection ?? 0) > 0) { faults.projection!--; throw new Error("projection"); } const envelope = allocateTerminalEnvelope(base, outcomes); if ((faults.oversized ?? 0) > 0) { faults.oversized!--; return { ...envelope, children: [{ ...envelope.children[0]!, result: "x".repeat(33 * 1024) }] }; } return envelope; },
-    createModelRuntime: async () => ({ getModel: () => ({ provider: "p", id: "m", reasoning: true }), getAvailable: async () => [{ provider: "p", id: "m" }] }) as never,
+    createModelRuntime: async () => ({ getModel: () => ({ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: true }), getAvailable: async () => [{ provider: "openai-codex", id: "gpt-5.6-luna" }] }) as never,
     createChild: async () => { childRuns++; let listener = (_event: any) => {}; const child = { messages: [] as any[], subscribe(fn: any) { listener = fn; return () => {}; }, async prompt() { listener({ type: "agent_start" }); child.messages.push({ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "immutable" }] }); }, async abort() {}, dispose() {} }; return child; },
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };

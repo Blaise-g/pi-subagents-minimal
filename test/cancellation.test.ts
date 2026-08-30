@@ -10,7 +10,7 @@ function fixture() {
   createExtension({ piVersion: "0.84.3", nodeVersion: "22.19.0", env: { PI_SUBAGENTS_MINIMAL_CONCURRENCY: "1", PI_SUBAGENTS_MINIMAL_CANCEL_TIMEOUT_MS: "1000" }, runtime: {
     id: () => `d_${++ids}`, now: () => new Date(1_700_000_000_000 + now), monotonicNow: () => now,
     setTimer(fn, ms) { const timer = { at: now + ms, fn, cleared: false }; timers.push(timer); return timer; }, clearTimer(handle) { (handle as any).cleared = true; }, loadAgent: async () => "agent",
-    createModelRuntime: async () => ({ getModel: () => ({ provider: "p", id: "m", reasoning: true }), getAvailable: async () => [{ provider: "p", id: "m" }] }) as never,
+    createModelRuntime: async () => ({ getModel: () => ({ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: true }), getAvailable: async () => [{ provider: "openai-codex", id: "gpt-5.6-luna" }] }) as never,
     createChild: async (request) => { let listener = (_: any) => {}; let resolve!: () => void; const done = new Promise<void>((r) => resolve = r); let abortResolve!: () => void; const aborted = new Promise<void>((r) => abortResolve = r); const child = { messages: [] as any[], disposed: 0, aborts: 0, subscribe(fn: any) { listener = fn; return () => {}; }, async prompt() { listener({ type: "agent_start" }); await done; }, async abort() { child.aborts++; await aborted; }, dispose() { child.disposed++; } }; pending.push({ task: request.task, child, resolve, abortResolve }); return child; },
   } })(pi as never);
   const ctx = { cwd: "/repo", model: { provider: "p", id: "m" }, thinkingLevel: "off", sessionManager: { isPersisted: () => true } };

@@ -22,7 +22,7 @@ Supported hosts are stable Pi `>=0.84.3 <0.85.0` and Node `>=22.19.0`.
 
 `delegate` starts one bounded Subagent or a flat batch in the background. Pi receives a concise completion notification and can use `delegation_control` to inspect the durable result or cancel live work.
 
-A Task contains an opaque bounded `task` string and optional `tools`, `model`, `thinking`, and `reportPath`. Parent skills may state a temporary role or analytical lens in `task`; this selects no definition and grants no capability. Every Subagent receives `read`, `grep`, `find`, and `ls`. The only selectable additional `0.2.0` tool is `git_diff`, a bounded interface for working-tree or fixed-point change inspection—not Bash or general Git. A valid `reportPath` derives `write_report` for exactly one project-relative Markdown path beneath `artifacts/`.
+A Task contains an opaque bounded `task` string and optional `tools`, `model`, `thinking`, and `reportPath`. Omitted model and Thinking values default globally to `openai-codex/gpt-5.6-luna` with `high` effort; explicit Task values still override either default independently. Parent skills may state a temporary role or analytical lens in `task`; this selects no definition and grants no capability. Every Subagent receives `read`, `grep`, `find`, and `ls`. The only selectable additional `0.2.0` tool is `git_diff`, a bounded interface for working-tree or fixed-point change inspection—not Bash or general Git. A valid `reportPath` derives `write_report` for exactly one project-relative Markdown path beneath `artifacts/`.
 
 Examples of parent requests:
 
