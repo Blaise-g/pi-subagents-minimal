@@ -1,0 +1,273 @@
+{
+  "name": "threshold-spec-r4-80",
+  "kind": "threshold",
+  "lens": "spec",
+  "repetition": 4,
+  "order": [
+    80,
+    50
+  ],
+  "ceiling": 80,
+  "latencyMs": 61940,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        },
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        }
+      ],
+      "usage": {
+        "input": 1078,
+        "output": 81,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 30,
+        "totalTokens": 1159,
+        "cost": {
+          "input": 0.0002156,
+          "output": 0.00009719999999999999,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0003128
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "620/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "620/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "622/1/src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1341,
+        "output": 114,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 11,
+        "totalTokens": 1455,
+        "cost": {
+          "input": 0.0002682,
+          "output": 0.0001368,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.000405
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "620/1"
+        },
+        {
+          "name": "ls",
+          "path": "622/1"
+        },
+        {
+          "name": "read",
+          "path": "620/1/src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "620/1/src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "622/1/src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1766,
+        "output": 193,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 76,
+        "totalTokens": 1959,
+        "cost": {
+          "input": 0.0003532,
+          "output": 0.0002316,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0005848
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 741,
+        "output": 52,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 32,
+        "totalTokens": 2329,
+        "cost": {
+          "input": 0.00014820000000000002,
+          "output": 0.0000624,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.00024132000000000003
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "ls",
+          "path": "src"
+        }
+      ],
+      "usage": {
+        "input": 815,
+        "output": 128,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 20,
+        "totalTokens": 2479,
+        "cost": {
+          "input": 0.000163,
+          "output": 0.0001536,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.00034732000000000003
+        }
+      }
+    },
+    {
+      "index": 6,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 27644,
+        "output": 323,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 145,
+        "totalTokens": 29503,
+        "cost": {
+          "input": 0.0055288,
+          "output": 0.0003876,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.00594712
+        }
+      }
+    },
+    {
+      "index": 7,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "grep",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 2057,
+        "output": 675,
+        "cacheRead": 28160,
+        "cacheWrite": 0,
+        "reasoning": 548,
+        "totalTokens": 30892,
+        "cost": {
+          "input": 0.0004114,
+          "output": 0.00081,
+          "cacheRead": 0.0005632,
+          "cacheWrite": 0,
+          "total": 0.0017846000000000001
+        }
+      }
+    },
+    {
+      "index": 8,
+      "calls": [],
+      "usage": {
+        "input": 4131,
+        "output": 1165,
+        "cacheRead": 29184,
+        "cacheWrite": 0,
+        "reasoning": 884,
+        "totalTokens": 34480,
+        "cost": {
+          "input": 0.0008262,
+          "output": 0.001398,
+          "cacheRead": 0.00058368,
+          "cacheWrite": 0,
+          "total": 0.00280788
+        }
+      }
+    }
+  ],
+  "answer": "Findings:\n\n- **Bounded parsing is missing** in all three files: `input.split(\":\")` is repeated through `record619` without any bound, e.g. `src/part-0.ts:2-621`; only `record0` is returned at `src/part-0.ts:621`.\n- **Malformed records are not rejected**: missing fields are replaced with `\"\"` via `?? \"\"` (`src/part-1.ts:2-621`), followed by an unconditional return (`src/part-1.ts:621`).\n- **Actionable errors are absent**: all parsers return a result rather than reporting validation failures (`src/part-0.ts:621`, `src/part-1.ts:621`, `src/part-2.ts:623`). `parse2` additionally swallows JSON errors with `catch {}` (`src/part-2.ts:622`).\n- **Unrequested, ineffective JSON parsing** was added in `src/part-2.ts:622`; the parsed value is discarded.\n- **Source identifiers are not parsed/preserved as record identifiers**: each parser returns the entire raw input as `id` (`src/part-0.ts:621`, `src/part-1.ts:621`, `src/part-2.ts:623`)."
+}

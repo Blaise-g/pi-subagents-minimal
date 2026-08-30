@@ -1,0 +1,409 @@
+{
+  "name": "broad-standards-r2-50",
+  "kind": "broad",
+  "lens": "standards",
+  "repetition": 2,
+  "order": [
+    80,
+    50
+  ],
+  "ceiling": 50,
+  "latencyMs": 77161,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        }
+      ],
+      "usage": {
+        "input": 1073,
+        "output": 39,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 18,
+        "totalTokens": 1112,
+        "cost": {
+          "input": 0.0002146,
+          "output": 0.0000468,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0002614
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "find",
+          "path": "."
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "432/1/src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 1374,
+        "output": 407,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 42,
+        "totalTokens": 1781,
+        "cost": {
+          "input": 0.0002748,
+          "output": 0.0004883999999999999,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0007631999999999999
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "read",
+          "path": "AGENTS.md"
+        },
+        {
+          "name": "ls",
+          "path": "430/1"
+        },
+        {
+          "name": "ls",
+          "path": "432/1"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1"
+        },
+        {
+          "name": "git_diff",
+          "path": "432/1"
+        }
+      ],
+      "usage": {
+        "input": 3102,
+        "output": 147,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 36,
+        "totalTokens": 3249,
+        "cost": {
+          "input": 0.0006204,
+          "output": 0.0001764,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0007968000000000001
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 1030,
+        "output": 49,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 29,
+        "totalTokens": 3639,
+        "cost": {
+          "input": 0.00020600000000000002,
+          "output": 0.0000588,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.00031600000000000004
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "src"
+        },
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 1101,
+        "output": 157,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 35,
+        "totalTokens": 3818,
+        "cost": {
+          "input": 0.0002202,
+          "output": 0.0001884,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.0004598
+        }
+      }
+    },
+    {
+      "index": 6,
+      "calls": [
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-3.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-4.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-5.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-6.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-7.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-8.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-9.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-10.ts"
+        }
+      ],
+      "usage": {
+        "input": 20072,
+        "output": 610,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 250,
+        "totalTokens": 23242,
+        "cost": {
+          "input": 0.0040144,
+          "output": 0.000732,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.004797600000000001
+        }
+      }
+    },
+    {
+      "index": 7,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-10.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-11.ts"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        }
+      ],
+      "usage": {
+        "input": 2428,
+        "output": 449,
+        "cacheRead": 22016,
+        "cacheWrite": 0,
+        "reasoning": 242,
+        "totalTokens": 24893,
+        "cost": {
+          "input": 0.00048560000000000004,
+          "output": 0.0005388,
+          "cacheRead": 0.00044032,
+          "cacheWrite": 0,
+          "total": 0.00146472
+        }
+      }
+    },
+    {
+      "index": 8,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-10.ts"
+        }
+      ],
+      "usage": {
+        "input": 1977,
+        "output": 354,
+        "cacheRead": 24064,
+        "cacheWrite": 0,
+        "reasoning": 116,
+        "totalTokens": 26395,
+        "cost": {
+          "input": 0.0003954,
+          "output": 0.00042479999999999997,
+          "cacheRead": 0.00048128,
+          "cacheWrite": 0,
+          "total": 0.00130148
+        }
+      }
+    },
+    {
+      "index": 9,
+      "calls": [],
+      "usage": {
+        "input": 57402,
+        "output": 1244,
+        "cacheRead": 25088,
+        "cacheWrite": 0,
+        "reasoning": 1034,
+        "totalTokens": 83734,
+        "cost": {
+          "input": 0.011480400000000002,
+          "output": 0.0014927999999999999,
+          "cacheRead": 0.00050176,
+          "cacheWrite": 0,
+          "total": 0.013474960000000001
+        }
+      }
+    }
+  ],
+  "answer": "- **High — malformed input is silently accepted.** All exported parsers lack validation and repeatedly default missing fields to `\"\"`; e.g. `src/part-0.ts:2-4,431` and the equivalent implementations in `src/part-1.ts`–`src/part-11.ts`. Inputs with missing/extra fields are returned instead of rejected, violating `AGENTS.md` and `SPEC.md` (“Reject malformed records” / actionable errors).\n\n- **High — error is swallowed.** `src/part-11.ts:432` uses `try { JSON.parse(input); } catch {}`, explicitly violating `AGENTS.md` (“Never swallow errors”).\n\n- **Medium — severe redundant code/performance smell.** Each parser performs 430 identical `input.split(\":\")` operations (`src/part-0.ts:2-431`, likewise all parts), while only `record0` is returned. This adds substantial unnecessary allocation and makes the implementation unmaintainable."
+}

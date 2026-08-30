@@ -1,0 +1,259 @@
+{
+  "name": "broad-standards-r1-50",
+  "kind": "broad",
+  "lens": "standards",
+  "repetition": 1,
+  "order": [
+    50,
+    80
+  ],
+  "ceiling": 50,
+  "latencyMs": 55204,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        },
+        {
+          "name": "find"
+        },
+        {
+          "name": "ls",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 1073,
+        "output": 96,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 30,
+        "totalTokens": 1169,
+        "cost": {
+          "input": 0.0002146,
+          "output": 0.0001152,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0003298
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "read",
+          "path": "AGENTS.md"
+        },
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "432/1/src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 1462,
+        "output": 419,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 44,
+        "totalTokens": 1881,
+        "cost": {
+          "input": 0.0002924,
+          "output": 0.0005028,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0007952
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "src"
+        },
+        {
+          "name": "find"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 3250,
+        "output": 392,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 53,
+        "totalTokens": 3642,
+        "cost": {
+          "input": 0.0006500000000000001,
+          "output": 0.0004704,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0011204000000000001
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-11.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-11.ts"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        }
+      ],
+      "usage": {
+        "input": 76046,
+        "output": 427,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 244,
+        "totalTokens": 79033,
+        "cost": {
+          "input": 0.0152092,
+          "output": 0.0005124,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.015772800000000003
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [],
+      "usage": {
+        "input": 1430,
+        "output": 1207,
+        "cacheRead": 78336,
+        "cacheWrite": 0,
+        "reasoning": 1034,
+        "totalTokens": 80973,
+        "cost": {
+          "input": 0.000286,
+          "output": 0.0014483999999999999,
+          "cacheRead": 0.00156672,
+          "cacheWrite": 0,
+          "total": 0.00330112
+        }
+      }
+    }
+  ],
+  "answer": "Findings:\n\n- **High — malformed records are accepted:** `src/part-0.ts:2-431` (and the same pattern in every modified parser) defaults missing fields to `\"\"` and returns successfully. This violates `SPEC.md`’s requirement to reject malformed records and AGENTS.md’s input-validation rule.\n- **High — error swallowed:** `src/part-11.ts:432` uses `try { JSON.parse(input); } catch {}`, violating AGENTS.md’s “Never swallow errors” requirement.\n- **Medium — material code smell/performance issue:** `src/part-0.ts:2-431` repeatedly calls `input.split(\":\")` 430 times and computes hundreds of unused variables; only `record0` is returned. The same duplication exists across all changed parsers."
+}

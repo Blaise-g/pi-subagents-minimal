@@ -1,0 +1,177 @@
+{
+  "name": "threshold-spec-r4-50",
+  "kind": "threshold",
+  "lens": "spec",
+  "repetition": 4,
+  "order": [
+    80,
+    50
+  ],
+  "ceiling": 50,
+  "latencyMs": 45286,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        },
+        {
+          "name": "find",
+          "path": "."
+        },
+        {
+          "name": "ls",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 1078,
+        "output": 100,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 31,
+        "totalTokens": 1178,
+        "cost": {
+          "input": 0.0002156,
+          "output": 0.00011999999999999999,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0003356
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        },
+        {
+          "name": "git_diff",
+          "path": "620/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "620/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "622/1/src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1356,
+        "output": 115,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 1471,
+        "cost": {
+          "input": 0.00027120000000000003,
+          "output": 0.000138,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0004092
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "find",
+          "path": "src"
+        }
+      ],
+      "usage": {
+        "input": 1816,
+        "output": 176,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 64,
+        "totalTokens": 1992,
+        "cost": {
+          "input": 0.00036320000000000005,
+          "output": 0.00021119999999999998,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0005744000000000001
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 27156,
+        "output": 411,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 259,
+        "totalTokens": 29103,
+        "cost": {
+          "input": 0.005431200000000001,
+          "output": 0.0004932,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.00595512
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [],
+      "usage": {
+        "input": 1441,
+        "output": 1185,
+        "cacheRead": 28160,
+        "cacheWrite": 0,
+        "reasoning": 967,
+        "totalTokens": 30786,
+        "cost": {
+          "input": 0.0002882,
+          "output": 0.0014219999999999999,
+          "cacheRead": 0.0005632,
+          "cacheWrite": 0,
+          "total": 0.0022734
+        }
+      }
+    }
+  ],
+  "answer": "Findings:\n\n- **Malformed records are not rejected, and no actionable errors are returned.** All parsers default missing fields to `\"\"` (`src/part-0.ts:2-621`, similarly `part-1.ts`/`part-2.ts`) and unconditionally return `{ id: input, value: record0 }` (`part-0.ts:621`, `part-1.ts:623`, `part-2.ts:623`).\n- **Parsing is not bounded.** Each parser performs 620 full `input.split(\":\")` operations (`src/part-0.ts:2-621`, `part-1.ts:2-621`, `part-2.ts:2-621`), with no input-size or record-count limit.\n- **Unrequested discarded JSON parsing was added** to `src/part-1.ts:622` and `src/part-2.ts:622`: `try { JSON.parse(input); } catch {}`. It neither contributes to parsing nor reports malformed input."
+}

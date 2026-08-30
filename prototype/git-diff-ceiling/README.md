@@ -24,8 +24,25 @@ Every run at both ceilings found the seeded material defects: absent validation,
 | latency | 69.8 s | 67.0 s |
 | provider cost | $0.02350 | $0.01939 |
 
+## Counterbalanced diagnostic follow-up
+
+Because the initial runs always executed 50 KiB before 80 KiB and a few long 50 KiB trajectories dominated the mean, `run-diagnostic.ts` repeated Broad Standards and Threshold Spec four times each, alternating which ceiling ran first and retaining per-turn call and usage summaries.
+
+| Mean across 8 diagnostic runs | 50 KiB | 80 KiB |
+|---|---:|---:|
+| turns | 7.50 | 8.25 |
+| `git_diff` calls | 16.00 | 15.88 |
+| file reads | 8.63 | 8.38 |
+| cumulative tokens | 168,331 | 183,466 |
+| latency | 62.0 s | 64.9 s |
+| provider cost | $0.01901 | $0.01987 |
+
+Every diagnostic run still found the seeded material defects. The apparent direction reversed: 50 KiB was slightly cheaper, while calls and reads were effectively tied. Both ceilings used fewer tokens when they ran second, exposing an order/cache confound. Individual trajectories varied much more than the ceiling means.
+
 ## Verdict
 
-Keep 80 KiB. Reducing the ceiling preserved findings but did not improve the measured behavior: it used 69% more cumulative tokens, 21% more file reads, 4% more latency, and 21% more provider cost. The lower mean `git_diff` count at 50 KiB did not translate into less overall evidence work.
+The prototype does **not** establish a material quality, call-count, token, latency, or cost advantage for either ceiling. The initial apparent 50 KiB penalty was caused by stochastic long trajectories plus fixed execution order, not reliably by the smaller result.
+
+For the downstream ceiling decision, treat efficiency as equivalent in this evidence. Retain 80 KiB only as a robustness choice—more evidence is available in one call with no demonstrated workflow penalty—not because this prototype proves it cheaper.
 
 This is directional Recorded-evaluation evidence, not CI or release qualification. Tool-call behavior was stochastic, the fixtures were synthetic, direct isolated Pi reviewers approximated Subagent review Tasks, and the 50 KiB wrapper truncated the rendered output rather than implementing a candidate metadata/patch allocator.

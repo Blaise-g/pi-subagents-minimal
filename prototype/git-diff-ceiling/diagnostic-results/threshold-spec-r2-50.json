@@ -1,0 +1,299 @@
+{
+  "name": "threshold-spec-r2-50",
+  "kind": "threshold",
+  "lens": "spec",
+  "repetition": 2,
+  "order": [
+    80,
+    50
+  ],
+  "ceiling": 50,
+  "latencyMs": 56616,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        },
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        }
+      ],
+      "usage": {
+        "input": 1078,
+        "output": 76,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 25,
+        "totalTokens": 1154,
+        "cost": {
+          "input": 0.0002156,
+          "output": 0.0000912,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0003068
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "620/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "620/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "622/1/src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1336,
+        "output": 114,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 11,
+        "totalTokens": 1450,
+        "cost": {
+          "input": 0.00026720000000000004,
+          "output": 0.0001368,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.00040400000000000006
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "620/1"
+        },
+        {
+          "name": "ls",
+          "path": "622/1"
+        },
+        {
+          "name": "read",
+          "path": "620/1/src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "620/1/src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "622/1/src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1761,
+        "output": 178,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 61,
+        "totalTokens": 1939,
+        "cost": {
+          "input": 0.00035220000000000005,
+          "output": 0.0002136,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0005658
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 721,
+        "output": 44,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 20,
+        "totalTokens": 2301,
+        "cost": {
+          "input": 0.0001442,
+          "output": 0.000052799999999999996,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.00022772000000000002
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "src"
+        },
+        {
+          "name": "find"
+        },
+        {
+          "name": "find"
+        }
+      ],
+      "usage": {
+        "input": 787,
+        "output": 83,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 16,
+        "totalTokens": 2406,
+        "cost": {
+          "input": 0.0001574,
+          "output": 0.0000996,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.00028772
+        }
+      }
+    },
+    {
+      "index": 6,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1456,
+        "output": 157,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "reasoning": 9,
+        "totalTokens": 3149,
+        "cost": {
+          "input": 0.00029120000000000003,
+          "output": 0.0001884,
+          "cacheRead": 0.000030720000000000004,
+          "cacheWrite": 0,
+          "total": 0.0005103200000000001
+        }
+      }
+    },
+    {
+      "index": 7,
+      "calls": [
+        {
+          "name": "grep",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "grep",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "grep",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        }
+      ],
+      "usage": {
+        "input": 51547,
+        "output": 272,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 108,
+        "totalTokens": 54379,
+        "cost": {
+          "input": 0.010309400000000002,
+          "output": 0.00032639999999999996,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.010687
+        }
+      }
+    },
+    {
+      "index": 8,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-2.ts"
+        }
+      ],
+      "usage": {
+        "input": 1034,
+        "output": 539,
+        "cacheRead": 53760,
+        "cacheWrite": 0,
+        "reasoning": 439,
+        "totalTokens": 55333,
+        "cost": {
+          "input": 0.0002068,
+          "output": 0.0006468,
+          "cacheRead": 0.0010752000000000001,
+          "cacheWrite": 0,
+          "total": 0.0019288
+        }
+      }
+    },
+    {
+      "index": 9,
+      "calls": [],
+      "usage": {
+        "input": 1833,
+        "output": 727,
+        "cacheRead": 53760,
+        "cacheWrite": 0,
+        "reasoning": 516,
+        "totalTokens": 56320,
+        "cost": {
+          "input": 0.0003666,
+          "output": 0.0008724,
+          "cacheRead": 0.0010752000000000001,
+          "cacheWrite": 0,
+          "total": 0.0023142
+        }
+      }
+    }
+  ],
+  "answer": "Findings:\n\n- **Malformed records are accepted** — `src/part-0.ts:2`, `src/part-1.ts:2`, and `src/part-2.ts:2` default missing fields to `\"\"`; each function still returns at lines `621`/`623`. No rejection occurs.\n- **No actionable errors are returned** — `src/part-0.ts:621` and `src/part-1.ts:621` always return; `src/part-2.ts:622` explicitly swallows parse failures with `catch {}`.\n- **Bounded parsing is not implemented** — all three files repeatedly call unrestricted `input.split(\":\")` (e.g. `src/part-0.ts:2-621`), with no record-count or input-bound validation.\n- **Unrequested JSON parsing** — `src/part-2.ts:622` calls `JSON.parse(input)` despite the specification only requiring record parsing; its result is unused."
+}

@@ -1,0 +1,261 @@
+{
+  "name": "broad-standards-r1-80",
+  "kind": "broad",
+  "lens": "standards",
+  "repetition": 1,
+  "order": [
+    50,
+    80
+  ],
+  "ceiling": 80,
+  "latencyMs": 59298,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        },
+        {
+          "name": "find",
+          "path": "."
+        },
+        {
+          "name": "ls",
+          "path": "."
+        }
+      ],
+      "usage": {
+        "input": 1073,
+        "output": 110,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 40,
+        "totalTokens": 1183,
+        "cost": {
+          "input": 0.0002146,
+          "output": 0.00013199999999999998,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.00034659999999999997
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "read",
+          "path": "AGENTS.md"
+        },
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "432/1/src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 1476,
+        "output": 417,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 42,
+        "totalTokens": 1893,
+        "cost": {
+          "input": 0.0002952,
+          "output": 0.0005004,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0007956
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "src"
+        },
+        {
+          "name": "find",
+          "path": "."
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 3262,
+        "output": 447,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 104,
+        "totalTokens": 3709,
+        "cost": {
+          "input": 0.0006524,
+          "output": 0.0005364,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0011888
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "grep",
+          "path": "src"
+        },
+        {
+          "name": "read",
+          "path": "src/part-11.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        }
+      ],
+      "usage": {
+        "input": 76113,
+        "output": 398,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 206,
+        "totalTokens": 79071,
+        "cost": {
+          "input": 0.015222600000000001,
+          "output": 0.00047759999999999995,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.015751400000000002
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [],
+      "usage": {
+        "input": 2194,
+        "output": 1309,
+        "cacheRead": 78336,
+        "cacheWrite": 0,
+        "reasoning": 1034,
+        "totalTokens": 81839,
+        "cost": {
+          "input": 0.00043880000000000004,
+          "output": 0.0015708,
+          "cacheRead": 0.00156672,
+          "cacheWrite": 0,
+          "total": 0.00357632
+        }
+      }
+    }
+  ],
+  "answer": "Findings:\n\n- **[P1] Malformed records are accepted instead of rejected.** Every parser defaults missing fields to `\"\"` and unconditionally returns a result; e.g. `src/part-0.ts:2-431`, `src/part-0.ts:431`, and `src/part-0.ts:431` return path. The same pattern exists in `src/part-1.ts`–`src/part-11.ts`. Violates `SPEC.md`.\n- **[P1] Errors are swallowed.** `src/part-11.ts:432` contains `try { JSON.parse(input); } catch {}`, directly violating `AGENTS.md` and providing no actionable error.\n- **[P1] Exported functions lack runtime input validation.** Each parser immediately calls `.split()` on the input (`src/part-0.ts:1-2`, repeated across all parsers), so non-string inputs produce an incidental `TypeError`, not an actionable validation error.\n- **[P2] Severe redundant code/performance smell.** Each parser performs hundreds of repeated `input.split(\":\")` calls and creates unused bindings (`src/part-0.ts:2-431`); only `record0` is used. This is duplicated across all 12 files."
+}

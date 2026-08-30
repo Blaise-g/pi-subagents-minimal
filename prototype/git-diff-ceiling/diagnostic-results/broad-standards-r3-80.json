@@ -1,0 +1,365 @@
+{
+  "name": "broad-standards-r3-80",
+  "kind": "broad",
+  "lens": "standards",
+  "repetition": 3,
+  "order": [
+    50,
+    80
+  ],
+  "ceiling": 80,
+  "latencyMs": 70529,
+  "turns": [
+    {
+      "index": 1,
+      "calls": [
+        {
+          "name": "git_diff"
+        }
+      ],
+      "usage": {
+        "input": 1073,
+        "output": 45,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 24,
+        "totalTokens": 1118,
+        "cost": {
+          "input": 0.0002146,
+          "output": 0.000054,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0002686
+        }
+      }
+    },
+    {
+      "index": 2,
+      "calls": [
+        {
+          "name": "find"
+        }
+      ],
+      "usage": {
+        "input": 1380,
+        "output": 32,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 11,
+        "totalTokens": 1412,
+        "cost": {
+          "input": 0.00027600000000000004,
+          "output": 0.0000384,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.00031440000000000005
+        }
+      }
+    },
+    {
+      "index": 3,
+      "calls": [
+        {
+          "name": "read",
+          "path": "AGENTS.md"
+        }
+      ],
+      "usage": {
+        "input": 1425,
+        "output": 19,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 1444,
+        "cost": {
+          "input": 0.00028500000000000004,
+          "output": 0.0000228,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.00030780000000000005
+        }
+      }
+    },
+    {
+      "index": 4,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "430/1/src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "432/1/src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 1471,
+        "output": 387,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 41,
+        "totalTokens": 1858,
+        "cost": {
+          "input": 0.00029420000000000005,
+          "output": 0.00046439999999999996,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0007586
+        }
+      }
+    },
+    {
+      "index": 5,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "430/1"
+        },
+        {
+          "name": "ls",
+          "path": "432/1"
+        },
+        {
+          "name": "find"
+        },
+        {
+          "name": "find"
+        }
+      ],
+      "usage": {
+        "input": 3168,
+        "output": 169,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 84,
+        "totalTokens": 3337,
+        "cost": {
+          "input": 0.0006336,
+          "output": 0.0002028,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0008364
+        }
+      }
+    },
+    {
+      "index": 6,
+      "calls": [
+        {
+          "name": "ls"
+        },
+        {
+          "name": "read",
+          "path": "SPEC.md"
+        }
+      ],
+      "usage": {
+        "input": 908,
+        "output": 66,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 19,
+        "totalTokens": 3534,
+        "cost": {
+          "input": 0.00018160000000000002,
+          "output": 0.0000792,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.00031200000000000005
+        }
+      }
+    },
+    {
+      "index": 7,
+      "calls": [
+        {
+          "name": "ls",
+          "path": "src"
+        }
+      ],
+      "usage": {
+        "input": 1030,
+        "output": 45,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 25,
+        "totalTokens": 3635,
+        "cost": {
+          "input": 0.00020600000000000002,
+          "output": 0.000054,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.00031120000000000003
+        }
+      }
+    },
+    {
+      "index": 8,
+      "calls": [
+        {
+          "name": "git_diff",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-1.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-2.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-3.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-4.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-5.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-6.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-7.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-8.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-9.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-10.ts"
+        },
+        {
+          "name": "git_diff",
+          "path": "src/part-11.ts"
+        }
+      ],
+      "usage": {
+        "input": 1145,
+        "output": 349,
+        "cacheRead": 2560,
+        "cacheWrite": 0,
+        "reasoning": 39,
+        "totalTokens": 4054,
+        "cost": {
+          "input": 0.000229,
+          "output": 0.0004188,
+          "cacheRead": 0.0000512,
+          "cacheWrite": 0,
+          "total": 0.000699
+        }
+      }
+    },
+    {
+      "index": 9,
+      "calls": [
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-0.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-11.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-11.ts"
+        },
+        {
+          "name": "read",
+          "path": "src/part-1.ts"
+        }
+      ],
+      "usage": {
+        "input": 75275,
+        "output": 511,
+        "cacheRead": 3584,
+        "cacheWrite": 0,
+        "reasoning": 359,
+        "totalTokens": 79370,
+        "cost": {
+          "input": 0.015055,
+          "output": 0.0006131999999999999,
+          "cacheRead": 0.00007168,
+          "cacheWrite": 0,
+          "total": 0.01573988
+        }
+      }
+    },
+    {
+      "index": 10,
+      "calls": [],
+      "usage": {
+        "input": 1446,
+        "output": 1493,
+        "cacheRead": 78336,
+        "cacheWrite": 0,
+        "reasoning": 1339,
+        "totalTokens": 81275,
+        "cost": {
+          "input": 0.00028920000000000004,
+          "output": 0.0017916,
+          "cacheRead": 0.00156672,
+          "cacheWrite": 0,
+          "total": 0.0036475199999999996
+        }
+      }
+    }
+  ],
+  "answer": "Findings:\n\n- **High — malformed input is accepted.** `src/part-0.ts:2-431` (same pattern in all `part-*.ts`) repeatedly defaults missing fields to `\"\"` and returns without validation, violating `AGENTS.md` and `SPEC.md`’s rejection/actionable-error requirements.\n- **High — error is swallowed.** `src/part-11.ts:432` uses `catch {}`, directly violating “Never swallow errors.”\n- **Medium — severe redundant parsing/code smell.** Each parser performs `input.split(\":\")` 430 times and stores 429 unused values (`src/part-0.ts:2-431`), with no bounded field-count check."
+}
