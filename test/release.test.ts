@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { access, readFile } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   buildReleaseRecord,
@@ -71,6 +71,16 @@ describe("release qualification", () => {
 
   test("the public package loader smoke accepts exactly the two package tools", async () => {
     await expect(smoke(resolve(root, "extensions/subagents-minimal.ts"))).resolves.toBeUndefined();
+  });
+
+  test("the public package loader smoke isolates a nested packed candidate from the checkout", async () => {
+    const candidate = await mkdtemp(resolve(root, ".packed-smoke-"));
+    try {
+      for (const path of ["agents", "extensions", "src"]) await cp(resolve(root, path), resolve(candidate, path), { recursive: true });
+      await expect(smoke(resolve(candidate, "extensions/subagents-minimal.ts"))).resolves.toBeUndefined();
+    } finally {
+      await rm(candidate, { recursive: true, force: true });
+    }
   });
 
   test("records the 0.2.0 dogfood qualification without a publication or model-quality claim", async () => {
