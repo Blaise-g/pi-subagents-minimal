@@ -1,6 +1,6 @@
 # Project guidance
 
-Preserve this package's deliberately narrow boundary. Do not add implementation Subagents, arbitrary Agent or tool discovery, nested delegation, workflow graphs, unrestricted mutation, or external-web capabilities without an approved specification decision.
+This repository contains the retired `pi-subagents-minimal` runtime. Follow [ADR 0003](docs/adr/0003-replace-local-runtime-with-task-first-extension.md). Treat the implementation and its supporting material as historical; do not duplicate the external workflow skills, add named Agent definitions, or change executable behavior without an accepted reactivation decision.
 
 ## Agent skills
 
@@ -18,9 +18,9 @@ This is a single-context repository. See `docs/agents/domain.md`.
 
 ## Development
 
-`docs/spec/v1-implementation-contract.md` is normative. Every executable behavior must be anchored to it and receive defect-revealing red proof before green verification.
+`docs/spec/v1-implementation-contract.md` is the historical contract for the retired runtime.
 
-Run focused checks while developing, then finish with:
+If an accepted decision reactivates executable development, run focused checks while developing, then finish with:
 
 ```sh
 bun run release:verify

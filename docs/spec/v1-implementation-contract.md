@@ -1,11 +1,10 @@
 # Canonical Implementation Contract
 
-Status: **Approved for implementation**
-Current implementation target: `pi-subagents-minimal@0.2.0`
-Future stable release target: `pi-subagents-minimal@1.0.0`
+Status: **Superseded by [ADR 0003](../adr/0003-replace-local-runtime-with-task-first-extension.md)**
+Historical implementation version: `pi-subagents-minimal@0.2.0`
 Contract revision: `2`
 
-This document is the sole normative implementation handoff. It incorporates the approved `0.2.0` decisions in [issue #40](https://github.com/Blaise-g/pi-subagents-minimal/issues/40). Earlier issues and the retained [proposal](v0.2-generic-subagent-capabilities-proposal.md) and [review](v0.2-generic-subagent-capabilities-review.md) are historical design evidence; this contract controls when wording conflicts.
+This document is the historical implementation handoff for the retired local runtime. It incorporates the approved `0.2.0` decisions in [issue #40](https://github.com/Blaise-g/pi-subagents-minimal/issues/40).
 
 ## 1. Product boundary
 
