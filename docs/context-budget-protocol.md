@@ -2,7 +2,7 @@
 
 The committed measurements in `budgets/context-baselines.json` use the contract tuple exactly: Pi `0.84.3`, provider `openai-codex`, model `gpt-5.6-sol`, medium Thinking, a newly-created otherwise-empty project, a fresh `--no-session` process, and prompt `Reply with exactly OK.`.
 
-Create one empty temporary directory and pack the checkout (`TARBALL=$(npm pack --silent)`). From that directory, run the following commands twice, deleting each output file first. `tools/context-recorder.ts` is the committed recorder/activator; use its absolute path and the tarball's unpacked `package/src/index.ts` absolute path as `$RECORDER` and `$EXTENSION`.
+Create one empty temporary directory and pack the checkout (`TARBALL=$(npm pack --silent)`). From that directory, run the following commands twice, deleting each output file first. `tools/context-recorder.ts` is the committed recorder/activator; use its absolute path and the tarball's unpacked `package/extensions/subagents-minimal.ts` absolute path as `$RECORDER` and `$EXTENSION`.
 
 ```sh
 CONTEXT_RECORD=baseline-1.jsonl pi --no-session --mode json -e "$RECORDER" --provider openai-codex --model gpt-5.6-sol --thinking medium -p 'Reply with exactly OK.'

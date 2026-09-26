@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { access, readFile } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   buildReleaseRecord,
@@ -70,7 +70,17 @@ describe("release qualification", () => {
   });
 
   test("the public package loader smoke accepts exactly the two package tools", async () => {
-    await expect(smoke(resolve(root, "src/index.ts"))).resolves.toBeUndefined();
+    await expect(smoke(resolve(root, "extensions/subagents-minimal.ts"))).resolves.toBeUndefined();
+  });
+
+  test("the public package loader smoke isolates a nested packed candidate from the checkout", async () => {
+    const candidate = await mkdtemp(resolve(root, ".packed-smoke-"));
+    try {
+      for (const path of ["agents", "extensions", "src"]) await cp(resolve(root, path), resolve(candidate, path), { recursive: true });
+      await expect(smoke(resolve(candidate, "extensions/subagents-minimal.ts"))).resolves.toBeUndefined();
+    } finally {
+      await rm(candidate, { recursive: true, force: true });
+    }
   });
 
   test("records the 0.2.0 dogfood qualification without a publication or model-quality claim", async () => {
@@ -79,7 +89,11 @@ describe("release qualification", () => {
       schemaVersion: 1,
       packageVersion: "0.2.0",
       changeClassification: "significant",
-      modelEvaluation: { collected: false, kind: "none" },
+      modelEvaluation: {
+        collected: true,
+        kind: "recorded",
+        evidence: "../artifacts/matched-model-thinking-recorded-evaluation.md",
+      },
     });
     expect(record.externalWorkflows).toEqual([
       { name: "code-review-diff", version: "0.2.0", evidence: "test/review-workflows.test.ts" },
@@ -104,6 +118,8 @@ describe("release qualification", () => {
     expect(workflow).toContain("bun tools/release.ts verify-identity");
     expect(workflow).toContain("npm publish --provenance --access public");
     expect(workflow).toContain("install -l npm:pi-subagents-minimal@");
+    expect(workflow).toContain("extensions/subagents-minimal.ts");
+    expect(workflow).not.toContain("src/index.ts");
     expect(workflow).toContain("environment: npm");
     expect(workflow).toContain("actions/checkout@v5");
     expect(workflow).toContain("actions/setup-node@v5");
@@ -117,6 +133,8 @@ describe("release qualification", () => {
     expect(qualification).toContain("bun test test/git-boundary.test.ts test/git-diff.test.ts");
     expect(qualification).toContain("Fresh local candidate pi install");
     expect(qualification).toContain('pi" install -l "$PACKAGE_ROOT"');
+    expect(qualification).toContain("extensions/subagents-minimal.ts");
+    expect(qualification).not.toContain("src/index.ts");
     expect(qualification).toContain("actions/checkout@v5");
     expect(qualification).toContain("actions/setup-node@v5");
     expect(qualification).not.toMatch(/actions\/(?:checkout|setup-node)@v4/);

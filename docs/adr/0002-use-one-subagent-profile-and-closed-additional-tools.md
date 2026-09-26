@@ -1,6 +1,6 @@
 # Use one Subagent profile and closed additional tools
 
-Status: **Accepted**
+Status: **Superseded by [ADR 0003](0003-replace-local-runtime-with-task-first-extension.md)**
 
 ## Context
 

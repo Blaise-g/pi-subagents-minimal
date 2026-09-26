@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { createExtension, isSupportedHost } from "../src/index.ts";
+import { createExtension, isSupportedHost } from "../extensions/subagents-minimal.ts";
 import { loadExtensionHarness } from "./harness.ts";
 
 const key = "PI_SUBAGENTS_MINIMAL_CONCURRENCY";
@@ -35,7 +35,7 @@ describe("host compatibility", () => {
 
 test("the public Pi loader loads the extension and invalid config disables admission", async () => {
   process.env[key] = "04";
-  const { extension } = await loadExtensionHarness(resolve("src/index.ts"));
+  const { extension } = await loadExtensionHarness(resolve("extensions/subagents-minimal.ts"));
   expect([...extension.tools.keys()]).toEqual(["delegate"]);
   const delegate = extension.tools.get("delegate")!;
   await expect(delegate.definition.execute("call", { mode: "single", task: { task: "x" } }, new AbortController().signal, undefined, {} as never))

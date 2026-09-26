@@ -15,8 +15,8 @@
   "keywords": ["pi-package"],
   "engines": { "node": ">=22.19.0" },
   "packageManager": "bun@1.4.0",
-  "files": ["src", "agents", "README.md", "LICENSE"],
-  "pi": { "extensions": ["./src/index.ts"] },
+  "files": ["extensions", "src", "agents", "README.md", "LICENSE"],
+  "pi": { "extensions": ["./extensions/subagents-minimal.ts"] },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",

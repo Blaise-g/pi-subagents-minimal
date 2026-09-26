@@ -1,5 +1,6 @@
-import { readFile, readdir, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export type EvidenceKind = "deterministic" | "packed" | "budget" | "release" | "typecheck";
@@ -151,18 +152,23 @@ async function createRecord(metadataDirectory: string, output: string): Promise<
 export async function smoke(extensionPath: string): Promise<void> {
   const { createEventBus, DefaultResourceLoader } = await import("@earendil-works/pi-coding-agent");
   const eventBus = createEventBus();
-  const loader = new DefaultResourceLoader({
-    cwd: process.cwd(), agentDir: process.cwd(), eventBus,
-    additionalExtensionPaths: [resolve(extensionPath)],
-    noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
-  });
-  await loader.reload();
-  const loaded = loader.getExtensions();
-  if (loaded.errors.length > 0) throw new Error(loaded.errors.map(({ error }) => error).join("\n"));
-  if (loaded.extensions.length !== 1) throw new Error(`expected one extension, got ${loaded.extensions.length}`);
-  const names = [...loaded.extensions[0]!.tools.keys()].sort();
-  if (JSON.stringify(names) !== JSON.stringify(["delegate", "delegation_control"])) throw new Error(`unexpected tools: ${names.join(", ")}`);
-  console.log("Packed smoke passed: delegate plus inactive-by-default delegation_control are the only package tools.");
+  const isolatedRoot = await mkdtemp(join(tmpdir(), "pi-subagents-release-smoke-"));
+  try {
+    const loader = new DefaultResourceLoader({
+      cwd: isolatedRoot, agentDir: isolatedRoot, eventBus,
+      additionalExtensionPaths: [resolve(extensionPath)],
+      noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
+    });
+    await loader.reload();
+    const loaded = loader.getExtensions();
+    if (loaded.errors.length > 0) throw new Error(loaded.errors.map(({ error }) => error).join("\n"));
+    if (loaded.extensions.length !== 1) throw new Error(`expected one extension, got ${loaded.extensions.length}`);
+    const names = [...loaded.extensions[0]!.tools.keys()].sort();
+    if (JSON.stringify(names) !== JSON.stringify(["delegate", "delegation_control"])) throw new Error(`unexpected tools: ${names.join(", ")}`);
+    console.log("Packed smoke passed: delegate plus inactive-by-default delegation_control are the only package tools.");
+  } finally {
+    await rm(isolatedRoot, { recursive: true, force: true });
+  }
 }
 
 async function main(): Promise<void> {

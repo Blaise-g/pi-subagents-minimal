@@ -6,9 +6,10 @@
     "deterministic-dogfood-candidate"
   ],
   "modelEvaluation": {
-    "collected": false,
-    "kind": "none",
-    "rationale": "No unresolved model-behavior question justified a provider-backed Quality smoke or Recorded evaluation. Deterministic qualification makes no general model-quality claim."
+    "collected": true,
+    "kind": "recorded",
+    "evidence": "../artifacts/matched-model-thinking-recorded-evaluation.md",
+    "rationale": "A requested one-off matched-model and Thinking repository-exploration run provides narrow supporting evidence. It is not release qualification and makes no general model-quality claim."
   },
   "externalWorkflows": [
     {

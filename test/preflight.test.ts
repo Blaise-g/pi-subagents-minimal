@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: () => Promise<never>; persisted?: boolean; prepareGit?: () => Promise<any> } = {}) {
   const effects = { ids: 0, children: 0, entries: 0, activations: 0, requests: [] as any[] };
@@ -9,8 +9,11 @@ function fixture(overrides: { model?: unknown; available?: unknown[]; runtime?: 
     runtime: {
       id: () => { effects.ids++; return "d_test"; }, now: () => new Date(), loadAgent: async () => "agent",
       createModelRuntime: overrides.runtime ?? (async () => ({
-        getModel: () => Object.hasOwn(overrides, "model") ? overrides.model : { provider: "test", id: "model", reasoning: true },
-        getAvailable: async () => overrides.available ?? [{ provider: "test", id: "model" }],
+        getModel: (provider: string, id: string) => Object.hasOwn(overrides, "model") ? overrides.model : { provider, id, reasoning: true },
+        getAvailable: async () => overrides.available ?? [
+          { provider: "test", id: "model" },
+          { provider: "openai-codex", id: "gpt-5.6-luna" },
+        ],
       }) as never),
       prepareGit: overrides.prepareGit,
       createChild: async (request) => { effects.children++; effects.requests.push(request); return { messages: [], subscribe: () => () => {}, prompt: () => new Promise<void>(() => {}), dispose() {}, abort: async () => {} }; },
@@ -39,6 +42,34 @@ describe("single Delegation preflight", () => {
     const { execute, effects } = fixture();
     await expect(execute(task)).rejects.toThrow(`[${code}]`);
     assertNoAdmission(effects);
+  });
+
+  test("defaults omitted model and Thinking to Luna with high Thinking", async () => {
+    const { execute, effects } = fixture();
+    await execute({ task: "x" });
+    await Bun.sleep(0);
+    expect(effects.requests[0]).toMatchObject({
+      model: { provider: "openai-codex", id: "gpt-5.6-luna" },
+      thinking: "high",
+    });
+  });
+
+  test("applies model and Thinking defaults independently", async () => {
+    const explicitModel = fixture();
+    await explicitModel.execute({ task: "x", model: "test/model" });
+    await Bun.sleep(0);
+    expect(explicitModel.effects.requests[0]).toMatchObject({
+      model: { provider: "test", id: "model" },
+      thinking: "high",
+    });
+
+    const explicitThinking = fixture();
+    await explicitThinking.execute({ task: "x", thinking: "low" });
+    await Bun.sleep(0);
+    expect(explicitThinking.effects.requests[0]).toMatchObject({
+      model: { provider: "openai-codex", id: "gpt-5.6-luna" },
+      thinking: "low",
+    });
   });
 
   test("accepts the exact UTF-8 task and model byte boundaries", async () => {
@@ -71,7 +102,7 @@ describe("single Delegation preflight", () => {
   test.each([
     [undefined, [], "MODEL_NOT_FOUND"],
     [{ provider: "test", id: "model", reasoning: true }, [], "MODEL_UNAVAILABLE"],
-    [{ provider: "test", id: "model", reasoning: false }, [{ provider: "test", id: "model" }], "THINKING_UNSUPPORTED"],
+    [{ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: false }, [{ provider: "openai-codex", id: "gpt-5.6-luna" }], "THINKING_UNSUPPORTED"],
   ] as const)("sanitizes model preflight failures %#", async (model, available, code) => {
     const { execute, effects } = fixture({ model, available: [...available] });
     await expect(execute({ task: "x" })).rejects.toThrow(`[${code}]`);

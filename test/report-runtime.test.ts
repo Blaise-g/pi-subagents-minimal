@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 const waitUntil = async (predicate: () => boolean) => { for (let i = 0; i < 100; i++) { if (predicate()) return; await Bun.sleep(5); } throw new Error("condition not reached"); };
 
@@ -26,7 +26,7 @@ test("gives a report Subagent only its closure-bound writer and projects path pl
       piVersion: "0.84.3", nodeVersion: "22.19.0",
       runtime: {
         id: () => "d_report", now: () => new Date("2026-01-01T00:00:00.000Z"), loadAgent: async () => "agent",
-        createModelRuntime: async () => ({ getModel: () => ({ provider: "test", id: "model", reasoning: true }), getAvailable: async () => [{ provider: "test", id: "model" }] }) as never,
+        createModelRuntime: async () => ({ getModel: () => ({ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: true }), getAvailable: async () => [{ provider: "openai-codex", id: "gpt-5.6-luna" }] }) as never,
         async createChild(request) { childTools = request.customTools; return child; },
       },
     })({ registerTool: (tool: any) => tools.set(tool.name, tool), on() {}, getActiveTools: () => ["delegate"], setActiveTools() {}, appendEntry() {}, sendMessage() { completed = true; } } as never);

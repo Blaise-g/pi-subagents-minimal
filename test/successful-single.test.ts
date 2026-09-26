@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 const waitUntil = async (predicate: () => boolean) => {
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -41,8 +41,8 @@ test("runs an isolated generic Subagent and persists v2 before notifying and con
       now: () => new Date("2026-01-02T03:04:05.000Z"),
       loadAgent: async () => "EXACT AGENT",
       createModelRuntime: async () => ({
-        getModel: () => ({ provider: "test", id: "model", reasoning: true }),
-        getAvailable: async () => [{ provider: "test", id: "model" }],
+        getModel: () => ({ provider: "openai-codex", id: "gpt-5.6-luna", reasoning: true }),
+        getAvailable: async () => [{ provider: "openai-codex", id: "gpt-5.6-luna" }],
       }) as never,
       async createChild(request) { childRequest = request as unknown as Record<string, unknown>; return child; },
     },
@@ -55,7 +55,7 @@ test("runs an isolated generic Subagent and persists v2 before notifying and con
   const accepted = await tools.get("delegate")!.execute("call" as never, { mode: "single", task: { task: "inspect 🙂\nexact" } } as never, new AbortController().signal as never, undefined as never, ctx as never);
   expect(JSON.parse(accepted.content[0]!.text)).toEqual({ schemaVersion: 1, delegationId: "d_00000000-0000-4000-8000-000000000000", phase: "queued", taskCount: 1 });
   await waitUntil(() => events.some((event) => event.startsWith("notify:")));
-  expect(childRequest).toMatchObject({ cwd: "/repo", task: "inspect 🙂\nexact", thinking: "high", agentDefinition: "EXACT AGENT", effectiveTools: ["read", "grep", "find", "ls"], customTools: [] });
+  expect(childRequest).toMatchObject({ cwd: "/repo", task: "inspect 🙂\nexact", model: { provider: "openai-codex", id: "gpt-5.6-luna" }, thinking: "high", agentDefinition: "EXACT AGENT", effectiveTools: ["read", "grep", "find", "ls"], customTools: [] });
   expect(events).toContain('prompt:inspect 🙂\nexact:{"expandPromptTemplates":false}');
   expect(events.findIndex((event) => event === "persist:pi-subagents-minimal:terminal")).toBeLessThan(events.findIndex((event) => event.startsWith("notify:")));
   expect(active).toContain("other_extension_tool");

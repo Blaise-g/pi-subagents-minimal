@@ -1,11 +1,10 @@
 # Canonical Implementation Contract
 
-Status: **Approved for implementation**
-Current implementation target: `pi-subagents-minimal@0.2.0`
-Future stable release target: `pi-subagents-minimal@1.0.0`
+Status: **Superseded by [ADR 0003](../adr/0003-replace-local-runtime-with-task-first-extension.md)**
+Historical implementation version: `pi-subagents-minimal@0.2.0`
 Contract revision: `2`
 
-This document is the sole normative implementation handoff. It incorporates the approved `0.2.0` decisions in [issue #40](https://github.com/Blaise-g/pi-subagents-minimal/issues/40). Earlier issues and the retained [proposal](v0.2-generic-subagent-capabilities-proposal.md) and [review](v0.2-generic-subagent-capabilities-review.md) are historical design evidence; this contract controls when wording conflicts.
+This document is the historical implementation handoff for the retired local runtime. It incorporates the approved `0.2.0` decisions in [issue #40](https://github.com/Blaise-g/pi-subagents-minimal/issues/40).
 
 ## 1. Product boundary
 
@@ -27,7 +26,7 @@ pi install npm:pi-subagents-minimal@1.0.0
 
 The npm tarball contains only:
 
-- `package.json`, with one explicit `pi.extensions` entry for `./src/index.ts`;
+- `package.json`, with one explicit `pi.extensions` entry for `./extensions/subagents-minimal.ts`;
 - TypeScript extension/runtime modules loaded directly by Pi through jiti;
 - `agents/subagent.md`, the sole role-neutral definition, selected internally by exact identity and not exposed as a Pi skill or prompt;
 - `README.md`, `LICENSE`, and required notices.
@@ -97,7 +96,7 @@ Limits:
 - `single`: exactly one child.
 - `batch`: 2–8 children.
 
-Both Task and tool-input objects are strict (`additionalProperties: false`). The tool has no cwd, deadline, arbitrary system prompt, Agent selector, Agent discovery, or arbitrary capability argument. `tools` is additions-only: omission and `[]` are equivalent, repeated legal names are deduplicated idempotently, and any unknown name fails before admission. Missing model and Thinking fields independently inherit the Orchestrator values captured at preflight. Unsupported or unauthenticated combinations fail; values are never clamped or substituted. The exact Unicode `task` bytes become the child user message unchanged, with skill and prompt-template expansion disabled.
+Both Task and tool-input objects are strict (`additionalProperties: false`). The tool has no cwd, deadline, arbitrary system prompt, Agent selector, Agent discovery, or arbitrary capability argument. `tools` is additions-only: omission and `[]` are equivalent, repeated legal names are deduplicated idempotently, and any unknown name fails before admission. Missing model and Thinking fields independently default to `openai-codex/gpt-5.6-luna` and `high`, respectively. Explicit Task values override these defaults. Unsupported or unauthenticated combinations fail; values are never clamped or substituted. The exact Unicode `task` bytes become the child user message unchanged, with skill and prompt-template expansion disabled.
 
 After whole-request preflight, successful execution returns compact JSON in `content` and `{}` in `details`:
 

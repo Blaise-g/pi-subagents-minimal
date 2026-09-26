@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import baselines from "../budgets/context-baselines.json" with { type: "json" };
-import { createExtension } from "../src/index.ts";
+import { createExtension } from "../extensions/subagents-minimal.ts";
 
 const wire = (tool: any) => ({ type: "function", name: tool.name, description: tool.description, parameters: tool.parameters });
 const size = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
